@@ -1,0 +1,308 @@
+version: '3.8'
+
+services:
+  # ==================== 基础设施 ====================
+  
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: vms-mysql
+    restart: "no"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+      - ./mysql/conf/my.cnf:/etc/mysql/conf.d/my.cnf
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+    networks:
+      - vms-network
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: vms-redis
+    restart: "no"
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+          cpus: '0.5'
+        reservations:
+          memory: 64M
+    networks:
+      - vms-network
+
+  # Nacos 服务注册与配置中心 (standalone 模式使用内置 Derby 数据库)
+  nacos:
+    image: nacos/nacos-server:v2.2.3
+    container_name: vms-nacos
+    restart: "no"
+    environment:
+      MODE: standalone
+      NACOS_AUTH_ENABLE: "false"
+      JVM_XMS: 256m
+      JVM_XMX: 512m
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    volumes:
+      - ./data/nacos:/home/nacos/data
+      - ./logs/nacos:/home/nacos/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8848/nacos/"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+          cpus: '1.0'
+        reservations:
+          memory: 384M
+    networks:
+      - vms-network
+
+  # ==================== 微服务 ====================
+  
+  # API 网关
+  vms-gateway:
+    build:
+      context: ./backend
+      args:
+        SERVICE_NAME: vms-gateway
+    container_name: vms-gateway
+    restart: "no"
+    environment:
+      NACOS_SERVER_ADDR: nacos:8848
+      MYSQL_HOST: vms-mysql
+      REDIS_HOST: redis
+      JWT_SECRET: ${JWT_SECRET}
+      JAVA_OPTS: -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./logs/gateway:/app/logs
+    depends_on:
+      nacos:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+          cpus: '0.5'
+        reservations:
+          memory: 192M
+    networks:
+      - vms-network
+
+  # 用户服务
+  vms-user:
+    build:
+      context: ./backend
+      args:
+        SERVICE_NAME: vms-user
+    container_name: vms-user
+    restart: "no"
+    environment:
+      NACOS_SERVER_ADDR: nacos:8848
+      MYSQL_HOST: vms-mysql
+      REDIS_HOST: redis
+      JAVA_OPTS: -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./logs/user:/app/logs
+    depends_on:
+      nacos:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+          cpus: '0.5'
+        reservations:
+          memory: 192M
+    networks:
+      - vms-network
+
+  # 视频服务
+  vms-video:
+    build:
+      context: ./backend
+      args:
+        SERVICE_NAME: vms-video
+    container_name: vms-video
+    restart: "no"
+    environment:
+      NACOS_SERVER_ADDR: nacos:8848
+      MYSQL_HOST: vms-mysql
+      REDIS_HOST: redis
+      JAVA_OPTS: -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m
+    ports:
+      - "8082:8082"
+    volumes:
+      - ./logs/video:/app/logs
+    depends_on:
+      nacos:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+          cpus: '0.5'
+        reservations:
+          memory: 192M
+    networks:
+      - vms-network
+
+  # 互动服务
+  vms-interaction:
+    build:
+      context: ./backend
+      args:
+        SERVICE_NAME: vms-interaction
+    container_name: vms-interaction
+    restart: "no"
+    environment:
+      NACOS_SERVER_ADDR: nacos:8848
+      MYSQL_HOST: vms-mysql
+      REDIS_HOST: redis
+      JAVA_OPTS: -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m
+    ports:
+      - "8083:8083"
+    volumes:
+      - ./logs/interaction:/app/logs
+    depends_on:
+      nacos:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+          cpus: '0.5'
+        reservations:
+          memory: 192M
+    networks:
+      - vms-network
+
+  # 运营服务
+  vms-operation:
+    build:
+      context: ./backend
+      args:
+        SERVICE_NAME: vms-operation
+    container_name: vms-operation
+    restart: "no"
+    environment:
+      NACOS_SERVER_ADDR: nacos:8848
+      MYSQL_HOST: vms-mysql
+      REDIS_HOST: redis
+      JAVA_OPTS: -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m
+    ports:
+      - "8084:8084"
+    volumes:
+      - ./logs/operation:/app/logs
+    depends_on:
+      nacos:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+          cpus: '0.5'
+        reservations:
+          memory: 192M
+    networks:
+      - vms-network
+
+  # 文件服务
+  vms-file:
+    build:
+      context: ./backend
+      args:
+        SERVICE_NAME: vms-file
+    container_name: vms-file
+    restart: "no"
+    environment:
+      NACOS_SERVER_ADDR: nacos:8848
+      MYSQL_HOST: vms-mysql
+      REDIS_HOST: redis
+      UPLOAD_PATH: ${UPLOAD_PATH}
+      JAVA_OPTS: -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m
+    ports:
+      - "8085:8085"
+    volumes:
+      - ./logs/file:/app/logs
+      - ./media:/app/media
+    depends_on:
+      nacos:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+          cpus: '0.5'
+        reservations:
+          memory: 192M
+    networks:
+      - vms-network
+
+  # ==================== 前端 ====================
+  
+  # Nginx 前端服务
+  nginx:
+    build:
+      context: ./frontend
+    container_name: vms-nginx
+    restart: "no"
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./media:/usr/share/nginx/html/media:ro
+      - ./logs/nginx:/var/log/nginx
+    depends_on:
+      - vms-gateway
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.25'
+        reservations:
+          memory: 32M
+    networks:
+      - vms-network
+
+networks:
+  vms-network:
+    driver: bridge
+

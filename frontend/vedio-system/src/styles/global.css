@@ -1,0 +1,273 @@
+/**********************************
+ * @Author: Ronnie Zhang
+ * @LastEditor: Ronnie Zhang
+ * @LastEditTime: 2023/12/05 21:26:28
+ * @Email: zclzone@outlook.com
+ * Copyright © 2023 Ronnie Zhang(大脸怪) | https://isme.top
+ **********************************/
+
+/* ============================================
+   CSS 变量定义
+   ============================================ */
+:root {
+  /* 主题色 */
+  --vms-primary: #FB7299;
+  --vms-primary-light: #fc8bab;
+  --vms-primary-dark: #d9547b;
+  --vms-primary-rgb: 251, 114, 153;
+  
+  /* 背景色 */
+  --vms-bg-dark: #0f1115;
+  --vms-bg-card: #1a1a2e;
+  --vms-bg-elevated: #25272d;
+  
+  /* 文字颜色 */
+  --vms-text-primary: #f1f2f3;
+  --vms-text-secondary: #9499a0;
+  --vms-text-muted: #61666d;
+  
+  /* 边框 */
+  --vms-border: #2a2a3e;
+  --vms-border-light: #3a3c42;
+  
+  /* 阴影 */
+  --vms-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --vms-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --vms-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --vms-shadow-primary: 0 4px 20px rgba(251, 114, 153, 0.3);
+  
+  /* 动画时间 */
+  --vms-transition-fast: 0.15s;
+  --vms-transition-normal: 0.3s;
+  --vms-transition-slow: 0.5s;
+  
+  /* 圆角 */
+  --vms-radius-sm: 4px;
+  --vms-radius-md: 8px;
+  --vms-radius-lg: 12px;
+  --vms-radius-xl: 16px;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  /* overflow: hidden; */
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+}
+
+/* ============================================
+   全局动画关键帧
+   ============================================ */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(251, 114, 153, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(251, 114, 153, 0.6); }
+}
+
+/* ============================================
+   页面过渡动画
+   ============================================ */
+.fade-slide-leave-active,
+.fade-slide-enter-active {
+  transition: all 0.3s;
+}
+
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateX(-2%);
+}
+
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateX(2%);
+}
+
+/* ============================================
+   滚动条样式
+   ============================================ */
+.cus-scroll {
+  overflow: auto;
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+}
+.cus-scroll-x {
+  overflow-x: auto;
+  &::-webkit-scrollbar {
+    width: 0;
+    height: 8px;
+  }
+}
+.cus-scroll-y {
+  overflow-y: auto;
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 0;
+  }
+}
+.cus-scroll,
+.cus-scroll-x,
+.cus-scroll-y {
+  &::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    border-radius: 4px;
+  }
+  &:hover {
+    &::-webkit-scrollbar-thumb {
+      background: #bfbfbf;
+    }
+    &::-webkit-scrollbar-thumb:hover {
+      background: var(--vms-primary);
+    }
+  }
+}
+
+/* ============================================
+   Glassmorphism 效果
+   ============================================ */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-dark {
+  background: rgba(15, 17, 21, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ============================================
+   加载骨架屏动画
+   ============================================ */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #1a1a2e 25%,
+    #2a2a3e 50%,
+    #1a1a2e 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* ============================================
+   渐变文字效果
+   ============================================ */
+.gradient-text {
+  background: linear-gradient(135deg, var(--vms-primary), #ff9a9e);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============================================
+   主题切换动画
+   ============================================ */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root),
+.dark::view-transition-new(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root),
+.dark::view-transition-old(root) {
+  z-index: 9999;
+}
+
+/* ============================================
+   工具类
+   ============================================ */
+.animate-fadeIn { animation: fadeIn var(--vms-transition-normal) ease forwards; }
+.animate-fadeInUp { animation: fadeInUp var(--vms-transition-normal) ease forwards; }
+.animate-scaleIn { animation: scaleIn var(--vms-transition-normal) ease forwards; }
+.animate-pulse { animation: pulse 2s ease-in-out infinite; }
+.animate-float { animation: float 3s ease-in-out infinite; }
+.animate-glow { animation: glow 2s ease-in-out infinite; }
+
+.hover-lift {
+  transition: transform var(--vms-transition-normal) ease;
+}
+.hover-lift:hover {
+  transform: translateY(-4px);
+}
+
+.hover-scale {
+  transition: transform var(--vms-transition-fast) ease;
+}
+.hover-scale:hover {
+  transform: scale(1.05);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, var(--vms-primary), #ff9a9e);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+

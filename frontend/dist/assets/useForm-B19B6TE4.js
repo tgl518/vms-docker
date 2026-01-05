@@ -1,0 +1,1 @@
+import{l as r,cE as n}from"./index-B-Gu03yZ.js";function s(o={}){const e=r(null),t=r(n(o));return[e,t,()=>e.value?.validate(),{required:{required:!0,message:"此为必填项",trigger:["blur","change"]}}]}export{s as u};

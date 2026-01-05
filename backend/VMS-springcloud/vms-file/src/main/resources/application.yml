@@ -1,0 +1,70 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: vms-file
+  
+  # ==================== 文件上传大小限制 ====================
+  servlet:
+    multipart:
+      max-file-size: 500MB      # 单个文件最大 500MB
+      max-request-size: 500MB   # 单次请求最大 500MB
+  
+  # ==================== Nacos 配置 (仅服务发现) ====================
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+        namespace: public
+        group: DEFAULT_GROUP
+
+  # ==================== 数据源配置 ====================
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/vms_cloud?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: 135781012q
+
+  # ==================== Redis 配置 ====================
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+
+# ==================== MyBatis-Plus 配置 ====================
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: cn.yznu.vms.file.entity
+
+# ==================== Knife4j 配置 ====================
+knife4j:
+  enable: true
+  production: false
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+
+# ==================== 日志配置 ====================
+logging:
+  level:
+    cn.yznu: debug
+
+# ==================== Actuator 配置 ====================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+# ==================== 文件上传配置 ====================
+file:
+  upload-path: /home/sikadi/code/vedio_project/media
+  access-url: http://localhost/media

@@ -1,0 +1,225 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: vms-gateway
+  
+  # ==================== Nacos 配置 ====================
+  cloud:
+    nacos:
+      # 服务发现
+      discovery:
+        server-addr: localhost:8848
+        namespace: public
+        group: DEFAULT_GROUP
+      # 配置中心
+      config:
+        server-addr: localhost:8848
+        namespace: public
+        group: DEFAULT_GROUP
+        file-extension: yaml
+    
+    # ==================== Gateway 路由配置 ====================
+    gateway:
+      # 全局跨域配置
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true
+            maxAge: 3600
+      
+      # 路由规则 (适配前端 API 路径，无 /api 前缀)
+      routes:
+        # 用户服务
+        - id: vms-user
+          uri: lb://vms-user
+          predicates:
+            - Path=/user/**
+        
+        # 视频服务
+        - id: vms-video
+          uri: lb://vms-video
+          predicates:
+            - Path=/video/**
+        
+        # 分类服务 (路由到视频服务)
+        - id: vms-category
+          uri: lb://vms-video
+          predicates:
+            - Path=/category/**
+        
+        # 标签服务 (路由到视频服务)
+        - id: vms-tag
+          uri: lb://vms-video
+          predicates:
+            - Path=/tag/**
+        
+        # 统计服务 (路由到视频服务)
+        - id: vms-statistics
+          uri: lb://vms-video
+          predicates:
+            - Path=/statistics/**
+        
+        # 互动服务 (评论)
+        - id: vms-interaction
+          uri: lb://vms-interaction
+          predicates:
+            - Path=/comment/**
+        
+        # 弹幕服务
+        - id: vms-danmaku
+          uri: lb://vms-interaction
+          predicates:
+            - Path=/danmaku/**
+        
+        # 互动服务 (点赞、收藏)
+        - id: vms-interact
+          uri: lb://vms-interaction
+          predicates:
+            - Path=/interact/**
+        
+        # 观看历史
+        - id: vms-history
+          uri: lb://vms-interaction
+          predicates:
+            - Path=/history/**
+        
+        # 运营服务 (轮播图)
+        - id: vms-operation
+          uri: lb://vms-operation
+          predicates:
+            - Path=/banner/**
+        
+        # 文件服务
+        - id: vms-file
+          uri: lb://vms-file
+          predicates:
+            - Path=/file/**
+        
+        # 静态资源访问 (文件服务) - 兼容现有 /files 路径
+        - id: vms-files-static
+          uri: lb://vms-file
+          predicates:
+            - Path=/files/**
+
+        # ==================== 接口文档聚合路由 ====================
+        - id: vms-user-docs
+          uri: lb://vms-user
+          predicates:
+            - Path=/docs/user/v3/api-docs
+          filters:
+            - RewritePath=/docs/user/v3/api-docs, /v3/api-docs
+        - id: vms-video-docs
+          uri: lb://vms-video
+          predicates:
+            - Path=/docs/video/v3/api-docs
+          filters:
+            - RewritePath=/docs/video/v3/api-docs, /v3/api-docs
+        - id: vms-interaction-docs
+          uri: lb://vms-interaction
+          predicates:
+            - Path=/docs/interaction/v3/api-docs
+          filters:
+            - RewritePath=/docs/interaction/v3/api-docs, /v3/api-docs
+        - id: vms-operation-docs
+          uri: lb://vms-operation
+          predicates:
+            - Path=/docs/operation/v3/api-docs
+          filters:
+            - RewritePath=/docs/operation/v3/api-docs, /v3/api-docs
+        - id: vms-file-docs
+          uri: lb://vms-file
+          predicates:
+            - Path=/docs/file/v3/api-docs
+          filters:
+            - RewritePath=/docs/file/v3/api-docs, /v3/api-docs
+
+  # ==================== Redis 配置 (可选，用于限流) ====================
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+
+# ==================== JWT 配置 ====================
+jwt:
+  secret: VmsSpringCloudSecretKeyForJwtTokenGeneration2024
+  expiration: 86400000  # 24小时 (毫秒)
+  # 不需要认证的路径 (公开接口白名单)
+  # 注意：管理员操作的接口（POST/PUT/DELETE）不能加入白名单，否则网关不会解析Token,导致Headers无法传递
+  ignore-urls:
+    - /user/login
+    - /user/register
+    # 视频公开接口 (只读)
+    - /video/list
+    - /video/detail/**
+    - /video/hot
+    - /video/play/**
+    - /video/search/**
+    # 分类和标签公开接口 (只读)
+    - /category/list
+    - /category/tree
+    - /tag/list
+    - /tag/hot
+    # 轮播图公开接口 (只读)
+    - /banner/list
+    - /files/**
+    - /file/**
+    # 接口文档相关的路径
+    - /doc.html
+    - /webjars/**
+    - /v3/api-docs/**
+    - /docs/**
+    - /swagger-resources/**
+# ==================== Knife4j 网关聚合配置 ====================
+knife4j:
+  enable: true
+  gateway:
+    enabled: true
+    # 指定具体的服务路由聚合
+    routes:
+      - name: 用户服务
+        url: /docs/user/v3/api-docs
+        service-name: vms-user
+        order: 1
+      - name: 视频服务
+        url: /docs/video/v3/api-docs
+        service-name: vms-video
+        order: 2
+      - name: 互动服务
+        url: /docs/interaction/v3/api-docs
+        service-name: vms-interaction
+        order: 3
+      - name: 运营服务
+        url: /docs/operation/v3/api-docs
+        service-name: vms-operation
+        order: 4
+      - name: 文件服务
+        url: /docs/file/v3/api-docs
+        service-name: vms-file
+        order: 5
+
+
+# ==================== 日志配置 ====================
+logging:
+  level:
+    cn.yznu.vms: debug
+    org.springframework.cloud.gateway: debug
+
+# ==================== Actuator 配置 ====================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    health:
+      show-details: always
+  health:
+    redis:
+      enabled: false  # 禁用Redis健康检查
+
