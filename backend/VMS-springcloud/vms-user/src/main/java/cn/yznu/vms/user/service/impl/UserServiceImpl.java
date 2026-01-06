@@ -4,6 +4,7 @@ import cn.yznu.vms.common.enums.StatusEnum;
 import cn.yznu.vms.common.exception.BusinessException;
 import cn.yznu.vms.common.result.ResultCode;
 import cn.yznu.vms.common.utils.JwtUtils;
+import cn.yznu.vms.user.config.JwtProperties;
 import cn.yznu.vms.user.dto.UserInfoUpdateDTO;
 import cn.yznu.vms.user.dto.UserLoginDTO;
 import cn.yznu.vms.user.dto.UserRegisterDTO;
@@ -43,6 +44,7 @@ public class UserServiceImpl implements UserService {
     private final UserRoleMapper userRoleMapper;
     private final PermissionMapper permissionMapper;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final JwtProperties jwtProperties;
 
     // 默认角色ID: 普通用户
     private static final Long DEFAULT_ROLE_ID = 2L;
@@ -78,8 +80,14 @@ public class UserServiceImpl implements UserService {
             roles = java.util.Collections.singletonList("user");
         }
 
-        // 6. 生成 Token
-        String token = JwtUtils.generateToken(user.getId(), user.getUsername(), roles);
+        // 6. 生成 Token (使用配置中的密钥和过期时间)
+        String token = JwtUtils.generateToken(
+                user.getId(), 
+                user.getUsername(), 
+                roles,
+                jwtProperties.getSecret(),
+                jwtProperties.getExpiration()
+        );
 
         // 7. 组装响应
         LoginVO vo = new LoginVO();
@@ -95,6 +103,7 @@ public class UserServiceImpl implements UserService {
         log.info("用户登录成功: {}", user.getUsername());
         return vo;
     }
+
 
     @Override
     @Transactional(rollbackFor = Exception.class)

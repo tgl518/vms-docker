@@ -24,7 +24,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/vms_cloud?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     username: root
-    password: 135781012q
+    password: password
 
   # ==================== Redis 配置 ====================
   data:
@@ -65,6 +65,7 @@ management:
         include: health,info
 
 # ==================== 文件上传配置 ====================
+# 本地开发配置，Docker 环境使用 application-docker.yml 覆盖
 file:
-  upload-path: /home/sikadi/code/vedio_project/media
+  upload-path: ./media
   access-url: http://localhost/media

@@ -45,35 +45,42 @@ export function createPermissionGuard(router) {
 
     const userStore = useUserStore()
     const permissionStore = usePermissionStore()
-    
+
     // 检查是否需要加载动态路由（用户已登录但权限未加载，或访问后台但路由未注册）
-    const needLoadPermissions = !userStore.userInfo || 
+    const needLoadPermissions = !userStore.userInfo ||
       (to.path.startsWith('/admin') && permissionStore.accessRoutes.length === 0)
-    
+
     if (needLoadPermissions) {
       const [user, permissions] = await Promise.all([getUserInfo(), getPermissions()])
       userStore.setUser(user)
       permissionStore.setPermissions(permissions)
-      
+
       // 动态导入所有视图组件，key格式为 /src/views/xxx/index.vue
       const routeComponents = import.meta.glob('/src/views/**/*.vue')
-      
+
       permissionStore.accessRoutes.forEach((route) => {
         if (route.component) {
           // 数据库中的路径格式与 import.meta.glob 的 key 格式一致
           if (routeComponents[route.component]) {
             route.component = routeComponents[route.component]
           } else {
-            route.component = undefined
+            // 尝试宽松匹配 (解决可能的路径前缀差异)
+            const componentKey = Object.keys(routeComponents).find(key => key.endsWith(route.component))
+            if (componentKey) {
+              route.component = routeComponents[componentKey]
+            } else {
+              console.warn(`[Permission Guard] Component not found: ${route.component}`)
+              route.component = undefined
+            }
           }
         }
-        
+
         // 设置默认layout为normal（后台管理布局）
         if (!route.meta) route.meta = {}
         if (!route.meta.layout && route.path?.startsWith('/admin')) {
           route.meta.layout = 'normal'
         }
-        
+
         !router.hasRoute(route.name) && router.addRoute(route)
       })
       return { ...to, replace: true }

@@ -120,7 +120,7 @@ services:
       MYSQL_HOST: mysql
       REDIS_HOST: redis
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-password}
-      JWT_SECRET: ${JWT_SECRET:-vmscloud_secret_key_2026}
+      JWT_SECRET: ${JWT_SECRET:-VmsSpringCloudSecretKeyForJwtTokenGeneration2024}
       JAVA_OPTS: -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m
     ports:
       - "8080:8080"
@@ -154,6 +154,7 @@ services:
       MYSQL_HOST: mysql
       REDIS_HOST: redis
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-password}
+      JWT_SECRET: ${JWT_SECRET:-VmsSpringCloudSecretKeyForJwtTokenGeneration2024}
       JAVA_OPTS: -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m
     ports:
       - "8081:8081"

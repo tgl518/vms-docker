@@ -23,7 +23,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://${MYSQL_HOST:mysql}:3306/vms_cloud?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     username: root
-    password: ${MYSQL_ROOT_PASSWORD:135781012q}
+    password: ${MYSQL_ROOT_PASSWORD:password}
   
   data:
     redis:
