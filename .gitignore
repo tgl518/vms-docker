@@ -9,8 +9,11 @@ data/
 # 日志目录
 logs/
 
-# 媒体文件
+# 媒体文件（但保留默认图片）
 media/
+!media/images/
+media/images/*
+!media/images/default/
 
 # IDE 和系统文件
 .idea/
