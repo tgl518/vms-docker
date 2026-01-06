@@ -1,4 +1,20 @@
 services:
+  # ==================== 配置检测 ====================
+  config-check:
+    image: alpine
+    container_name: vms-config-check
+    command: >
+      sh -c "if [ ! -f /app/.env ]; then
+        echo '----------------------------------------------------------------';
+        echo '⚠️  警告: 未找到 .env 配置文件！';
+        echo '使用系统内置默认值运行。这对于开发测试是安全的，但建议在生产环境中配置 .env 文件。';
+        echo '----------------------------------------------------------------';
+      fi"
+    volumes:
+      - .:/app
+    networks:
+      - vms-network
+
   # ==================== 基础设施 ====================
   
   # MySQL 数据库
@@ -7,8 +23,8 @@ services:
     container_name: vms-mysql
     restart: "no"
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-password}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-vms_cloud}
       TZ: Asia/Shanghai
     ports:
       - "3306:3306"
@@ -18,7 +34,7 @@ services:
       - ./mysql/conf/my.cnf:/etc/mysql/conf.d/my.cnf
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD:-password}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -103,8 +119,8 @@ services:
       NACOS_SERVER_ADDR: nacos:8848
       MYSQL_HOST: mysql
       REDIS_HOST: redis
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      JWT_SECRET: ${JWT_SECRET}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-password}
+      JWT_SECRET: ${JWT_SECRET:-vmscloud_secret_key_2026}
       JAVA_OPTS: -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m
     ports:
       - "8080:8080"
@@ -137,7 +153,7 @@ services:
       NACOS_SERVER_ADDR: nacos:8848
       MYSQL_HOST: mysql
       REDIS_HOST: redis
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-password}
       JAVA_OPTS: -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m
     ports:
       - "8081:8081"
@@ -170,7 +186,7 @@ services:
       NACOS_SERVER_ADDR: nacos:8848
       MYSQL_HOST: mysql
       REDIS_HOST: redis
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-password}
       JAVA_OPTS: -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m
     ports:
       - "8082:8082"
@@ -203,7 +219,7 @@ services:
       NACOS_SERVER_ADDR: nacos:8848
       MYSQL_HOST: mysql
       REDIS_HOST: redis
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-password}
       JAVA_OPTS: -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m
     ports:
       - "8083:8083"
@@ -236,7 +252,7 @@ services:
       NACOS_SERVER_ADDR: nacos:8848
       MYSQL_HOST: mysql
       REDIS_HOST: redis
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-password}
       JAVA_OPTS: -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m
     ports:
       - "8084:8084"
@@ -269,8 +285,8 @@ services:
       NACOS_SERVER_ADDR: nacos:8848
       MYSQL_HOST: mysql
       REDIS_HOST: redis
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      UPLOAD_PATH: ${UPLOAD_PATH}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-password}
+      UPLOAD_PATH: ${UPLOAD_PATH:-/app/media}
       JAVA_OPTS: -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m
     ports:
       - "8085:8085"
