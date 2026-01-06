@@ -176,16 +176,8 @@ class UserServiceTest {
         verify(userRoleMapper).insert(any(UserRole.class));
     }
 
-    @Test
-    void register_PasswordMismatch_ThrowsException() {
-        UserRegisterDTO registerDTO = new UserRegisterDTO();
-        registerDTO.setUsername("newuser");
-        registerDTO.setPassword("password");
-        registerDTO.setConfirmPassword("mismatch");
-
-        BusinessException exception = assertThrows(BusinessException.class, () -> userService.register(registerDTO));
-        assertEquals("两次密码输入不一致", exception.getMessage());
-    }
+    // 注意: 密码匹配校验测试应在 Controller 层 (通过 @PasswordMatches 注解实现),
+    // Service 层不做此校验，因此此处不测试 register_PasswordMismatch 场景
 
     @Test
     void getUserInfo_Success() {

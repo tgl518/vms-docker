@@ -83,7 +83,9 @@ export function createPermissionGuard(router) {
 
         !router.hasRoute(route.name) && router.addRoute(route)
       })
-      return { ...to, replace: true }
+      // 重新使用路径解析路由，确保匹配到新添加的动态路由
+      // 而不是之前匹配到的 AdminCatchAll
+      return { path: to.fullPath, replace: true }
     }
 
     // 用户端路由直接放行
