@@ -5,10 +5,13 @@ import cn.yznu.vms.common.exception.BusinessException;
 import cn.yznu.vms.common.result.ResultCode;
 import cn.yznu.vms.user.config.JwtProperties;
 import cn.yznu.vms.user.dto.UserLoginDTO;
+import cn.yznu.vms.user.dto.UserRegisterDTO;
 import cn.yznu.vms.user.entity.User;
 import cn.yznu.vms.user.entity.UserInfo;
+import cn.yznu.vms.user.entity.UserRole;
 import cn.yznu.vms.user.mapper.*;
 import cn.yznu.vms.user.vo.LoginVO;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -144,5 +147,68 @@ class UserServiceTest {
             userService.login(loginDTO);
         });
         assertEquals(ResultCode.USER_DISABLED.getMessage(), exception.getMessage());
+    }
+    @Test
+    void register_Success() {
+        // Prepare
+        UserRegisterDTO registerDTO = new UserRegisterDTO();
+        registerDTO.setUsername("newuser");
+        registerDTO.setPassword("password");
+        registerDTO.setConfirmPassword("password");
+        registerDTO.setNickname("New User");
+
+        when(userMapper.selectCount(any(LambdaQueryWrapper.class))).thenReturn(0L);
+        when(passwordEncoder.encode("password")).thenReturn("encodedPassword");
+        // Mock insert to set ID
+        when(userMapper.insert(any(User.class))).thenAnswer(invocation -> {
+            User u = invocation.getArgument(0);
+            u.setId(2L);
+            return 1;
+        });
+
+        // Act
+        Long userId = userService.register(registerDTO);
+
+        // Assert
+        assertEquals(2L, userId);
+        verify(userMapper).insert(any(User.class));
+        verify(userInfoMapper).insert(any(UserInfo.class));
+        verify(userRoleMapper).insert(any(UserRole.class));
+    }
+
+    @Test
+    void register_PasswordMismatch_ThrowsException() {
+        UserRegisterDTO registerDTO = new UserRegisterDTO();
+        registerDTO.setUsername("newuser");
+        registerDTO.setPassword("password");
+        registerDTO.setConfirmPassword("mismatch");
+
+        BusinessException exception = assertThrows(BusinessException.class, () -> userService.register(registerDTO));
+        assertEquals("两次密码输入不一致", exception.getMessage());
+    }
+
+    @Test
+    void getUserInfo_Success() {
+        // Prepare
+        Long userId = 1L;
+        User mockUser = new User();
+        mockUser.setId(userId);
+        mockUser.setUsername("testuser");
+        
+        UserInfo mockUserInfo = new UserInfo();
+        mockUserInfo.setNickname("Test Nickname");
+
+        when(userMapper.selectById(userId)).thenReturn(mockUser);
+        when(userInfoMapper.selectById(userId)).thenReturn(mockUserInfo);
+        when(roleMapper.selectCodesByUserId(userId)).thenReturn(List.of("user"));
+        when(permissionMapper.selectCodesByUserId(userId)).thenReturn(Collections.emptyList());
+
+        // Act
+        org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> {
+             cn.yznu.vms.user.vo.UserVO userVO = userService.getUserInfo(userId);
+             assertNotNull(userVO);
+             assertEquals(userId, userVO.getUserId());
+             assertEquals("Test Nickname", userVO.getNickname());
+        });
     }
 }

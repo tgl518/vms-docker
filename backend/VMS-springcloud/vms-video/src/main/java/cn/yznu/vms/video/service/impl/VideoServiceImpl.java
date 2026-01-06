@@ -150,19 +150,26 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
             return;
         }
 
-        // 删除视频封面
-        deleteFileByUrl(video.getCoverUrl());
+        // 使用 CompletableFuture 异步执行文件删除，避免阻塞主线程
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            try {
+                // 删除视频封面
+                deleteFileByUrl(video.getCoverUrl());
 
-        // 删除视频主文件（如果有）
-        deleteFileByUrl(video.getVideoUrl());
+                // 删除视频主文件（如果有）
+                deleteFileByUrl(video.getVideoUrl());
 
-        // 删除所有分集的文件
-        if (episodes != null) {
-            for (VideoEpisode episode : episodes) {
-                deleteFileByUrl(episode.getFileUrl());
-                deleteFileByUrl(episode.getCoverUrl());
+                // 删除所有分集的文件
+                if (episodes != null) {
+                    for (VideoEpisode episode : episodes) {
+                        deleteFileByUrl(episode.getFileUrl());
+                        deleteFileByUrl(episode.getCoverUrl());
+                    }
+                }
+            } catch (Exception e) {
+                log.error("异步删除视频文件失败: videoId={}, error={}", video.getId(), e.getMessage());
             }
-        }
+        });
     }
 
     /**

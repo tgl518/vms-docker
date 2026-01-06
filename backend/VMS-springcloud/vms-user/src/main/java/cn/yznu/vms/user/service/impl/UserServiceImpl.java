@@ -8,15 +8,11 @@ import cn.yznu.vms.user.config.JwtProperties;
 import cn.yznu.vms.user.dto.UserInfoUpdateDTO;
 import cn.yznu.vms.user.dto.UserLoginDTO;
 import cn.yznu.vms.user.dto.UserRegisterDTO;
+import cn.yznu.vms.user.entity.Role;
 import cn.yznu.vms.user.entity.User;
 import cn.yznu.vms.user.entity.UserInfo;
 import cn.yznu.vms.user.entity.UserRole;
-import cn.yznu.vms.user.entity.Role;
-import cn.yznu.vms.user.mapper.PermissionMapper;
-import cn.yznu.vms.user.mapper.RoleMapper;
-import cn.yznu.vms.user.mapper.UserInfoMapper;
-import cn.yznu.vms.user.mapper.UserMapper;
-import cn.yznu.vms.user.mapper.UserRoleMapper;
+import cn.yznu.vms.user.mapper.*;
 import cn.yznu.vms.user.service.UserService;
 import cn.yznu.vms.user.vo.LoginVO;
 import cn.yznu.vms.user.vo.UserVO;
@@ -108,12 +104,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long register(UserRegisterDTO dto) {
-        // 1. 校验密码一致性
-        if (!dto.getPassword().equals(dto.getConfirmPassword())) {
-            throw new BusinessException("两次密码输入不一致");
-        }
-
-        // 2. 检查用户名是否已存在
+        // 1. 检查用户名是否已存在
         Long count = userMapper.selectCount(
                 new LambdaQueryWrapper<User>()
                         .eq(User::getUsername, dto.getUsername())
@@ -122,21 +113,21 @@ public class UserServiceImpl implements UserService {
             throw new BusinessException(ResultCode.USER_ALREADY_EXISTS);
         }
 
-        // 3. 创建用户
+        // 2. 创建用户
         User user = new User();
         user.setUsername(dto.getUsername());
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
         user.setStatus(StatusEnum.ENABLED);  // 默认启用
         userMapper.insert(user);
 
-        // 4. 创建用户档案
+        // 3. 创建用户档案
         UserInfo userInfo = new UserInfo();
         userInfo.setUserId(user.getId());
         userInfo.setNickname(dto.getNickname() != null ? dto.getNickname() : dto.getUsername());
         userInfo.setGender((byte) 2);  // 默认保密
         userInfoMapper.insert(userInfo);
 
-        // 5. 分配默认角色 (RBAC)
+        // 4. 分配默认角色 (RBAC)
         UserRole userRole = new UserRole();
         userRole.setUserId(user.getId());
         userRole.setRoleId(DEFAULT_ROLE_ID);

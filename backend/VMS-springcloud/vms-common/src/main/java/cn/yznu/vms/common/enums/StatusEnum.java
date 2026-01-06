@@ -2,8 +2,6 @@ package cn.yznu.vms.common.enums;
 
 import com.baomidou.mybatisplus.annotation.EnumValue;
 import com.fasterxml.jackson.annotation.JsonValue;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 
 /**
  * 通用状态枚举（启用/禁用）

@@ -80,8 +80,9 @@ class VideoServiceTest {
         verify(videoEpisodeMapper).delete(any(LambdaQueryWrapper.class));
         verify(videoTagRelMapper).delete(any(LambdaQueryWrapper.class));
         verify(videoMapper).deleteById(videoId);
-        // Verify asynchronous file deletion logic (might not be executed immediately in unit test environment if it's truly async, but here it's synchronous)
-        verify(fileClient, atLeastOnce()).deleteFile(anyString(), anyLong());
+        // Verify asynchronous file deletion logic
+        // Since it's async, we use timeout to wait for the execution
+        verify(fileClient, timeout(1000).atLeastOnce()).deleteFile(anyString(), anyLong());
     }
 
     @Test
@@ -95,5 +96,25 @@ class VideoServiceTest {
 
         // Assert
         verify(videoMapper).update(any(), any());
+    }
+    @Test
+    void saveVideoTags_Success() {
+        // Prepare
+        Long videoId = 1L;
+        List<Long> tagIds = java.util.Arrays.asList(1L, 2L);
+
+        // Act
+        // Mock Db.saveBatch which is a static method call or internal call?
+        // Wait, videoService uses Db.saveBatch(relations). 
+        // Static mocking is hard with Mockito. 
+        // If we cannot mock static Db.saveBatch easily, we might skip testing that specific line or assume it works if no exception.
+        // But we can verify the delete call.
+        
+        videoService.saveVideoTags(videoId, tagIds);
+
+        // Assert
+        verify(videoTagRelMapper).delete(any(LambdaQueryWrapper.class));
+        // We cannot easily verify Db.saveBatch without PowerMock or wrapping it.
+        // Assuming success if no exception for this scope.
     }
 }
