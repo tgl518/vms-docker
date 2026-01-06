@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # ==================== 基础设施 ====================
   
@@ -103,8 +101,9 @@ services:
     restart: "no"
     environment:
       NACOS_SERVER_ADDR: nacos:8848
-      MYSQL_HOST: vms-mysql
+      MYSQL_HOST: mysql
       REDIS_HOST: redis
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       JAVA_OPTS: -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m
     ports:
@@ -113,6 +112,8 @@ services:
       - ./logs/gateway:/app/logs
     depends_on:
       nacos:
+        condition: service_healthy
+      mysql:
         condition: service_healthy
     deploy:
       resources:
@@ -134,8 +135,9 @@ services:
     restart: "no"
     environment:
       NACOS_SERVER_ADDR: nacos:8848
-      MYSQL_HOST: vms-mysql
+      MYSQL_HOST: mysql
       REDIS_HOST: redis
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       JAVA_OPTS: -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m
     ports:
       - "8081:8081"
@@ -143,6 +145,8 @@ services:
       - ./logs/user:/app/logs
     depends_on:
       nacos:
+        condition: service_healthy
+      mysql:
         condition: service_healthy
     deploy:
       resources:
@@ -164,8 +168,9 @@ services:
     restart: "no"
     environment:
       NACOS_SERVER_ADDR: nacos:8848
-      MYSQL_HOST: vms-mysql
+      MYSQL_HOST: mysql
       REDIS_HOST: redis
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       JAVA_OPTS: -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m
     ports:
       - "8082:8082"
@@ -173,6 +178,8 @@ services:
       - ./logs/video:/app/logs
     depends_on:
       nacos:
+        condition: service_healthy
+      mysql:
         condition: service_healthy
     deploy:
       resources:
@@ -194,8 +201,9 @@ services:
     restart: "no"
     environment:
       NACOS_SERVER_ADDR: nacos:8848
-      MYSQL_HOST: vms-mysql
+      MYSQL_HOST: mysql
       REDIS_HOST: redis
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       JAVA_OPTS: -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m
     ports:
       - "8083:8083"
@@ -203,6 +211,8 @@ services:
       - ./logs/interaction:/app/logs
     depends_on:
       nacos:
+        condition: service_healthy
+      mysql:
         condition: service_healthy
     deploy:
       resources:
@@ -224,8 +234,9 @@ services:
     restart: "no"
     environment:
       NACOS_SERVER_ADDR: nacos:8848
-      MYSQL_HOST: vms-mysql
+      MYSQL_HOST: mysql
       REDIS_HOST: redis
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       JAVA_OPTS: -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m
     ports:
       - "8084:8084"
@@ -233,6 +244,8 @@ services:
       - ./logs/operation:/app/logs
     depends_on:
       nacos:
+        condition: service_healthy
+      mysql:
         condition: service_healthy
     deploy:
       resources:
@@ -254,8 +267,9 @@ services:
     restart: "no"
     environment:
       NACOS_SERVER_ADDR: nacos:8848
-      MYSQL_HOST: vms-mysql
+      MYSQL_HOST: mysql
       REDIS_HOST: redis
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       UPLOAD_PATH: ${UPLOAD_PATH}
       JAVA_OPTS: -Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m
     ports:
@@ -265,6 +279,8 @@ services:
       - ./media:/app/media
     depends_on:
       nacos:
+        condition: service_healthy
+      mysql:
         condition: service_healthy
     deploy:
       resources:
@@ -305,4 +321,3 @@ services:
 networks:
   vms-network:
     driver: bridge
-
