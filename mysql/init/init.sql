@@ -1,8 +1,8 @@
--- MySQL dump 10.13  Distrib 8.0.44, for Linux (x86_64)
---
--- Host: localhost    Database: vms_cloud
--- ------------------------------------------------------
--- Server version	8.0.44
+-- ========================================
+-- VMS-Cloud 数据库初始化脚本 (动漫版 v2)
+-- 包含: 表结构 + 丰富动漫演示数据
+-- 创建时间: 2026-01-06
+-- ========================================
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -15,133 +15,464 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
---
--- Current Database: `vms_cloud`
---
-
-CREATE DATABASE /*!32312 IF NOT EXISTS*/ `vms_cloud` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
-
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `vms_cloud` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci */;
 USE `vms_cloud`;
 
---
--- Table structure for table `banner`
---
+-- ========================================
+-- 一、系统管理模块
+-- ========================================
 
-DROP TABLE IF EXISTS `banner`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `banner` (
-  `id` int NOT NULL AUTO_INCREMENT COMMENT '主键',
-  `title` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '标题',
-  `img_url` varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '图片URL',
-  `link_url` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '跳转链接',
-  `link_type` tinyint DEFAULT '0' COMMENT '类型: 0外链 1视频 2分类',
-  `target_id` bigint DEFAULT NULL COMMENT '目标ID',
-  `sort` int DEFAULT '0' COMMENT '排序',
-  `is_show` tinyint DEFAULT '1' COMMENT '显示: 1是 0否',
-  `start_time` datetime DEFAULT NULL COMMENT '开始时间',
-  `end_time` datetime DEFAULT NULL COMMENT '结束时间',
-  `deleted` tinyint DEFAULT '0' COMMENT '软删除',
-  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+-- 1. 用户表
+DROP TABLE IF EXISTS `sys_user`;
+CREATE TABLE `sys_user` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `username` varchar(50) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `email` varchar(100) DEFAULT NULL,
+  `phone` varchar(20) DEFAULT NULL,
+  `status` tinyint DEFAULT '1',
+  `deleted` tinyint DEFAULT '0',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `idx_sort` (`sort`),
-  KEY `idx_show` (`is_show`),
-  KEY `idx_deleted` (`deleted`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='轮播图表';
-/*!40101 SET character_set_client = @saved_cs_client */;
+  UNIQUE KEY `uk_username` (`username`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `banner`
---
+INSERT INTO `sys_user` VALUES 
+(1,'admin','$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi',NULL,NULL,1,0,NOW(),NOW()),
+(2,'test','$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi','test@test.com',NULL,1,0,NOW(),NOW());
 
-LOCK TABLES `banner` WRITE;
-/*!40000 ALTER TABLE `banner` DISABLE KEYS */;
-INSERT INTO `banner` VALUES (1,'欢迎使用VMS','http://localhost/media/images/2025/12/22/261418343100190720.png','/video/1',1,1,1,1,NULL,NULL,0,'2025-12-22 16:44:57'),(2,'探索精彩视频','https://images.unsplash.com/photo-1485846234645-a62644f84728?w=1200',NULL,0,NULL,2,1,NULL,NULL,0,'2025-12-22 16:44:57');
-/*!40000 ALTER TABLE `banner` ENABLE KEYS */;
-UNLOCK TABLES;
+-- 2. 用户档案表
+DROP TABLE IF EXISTS `sys_user_info`;
+CREATE TABLE `sys_user_info` (
+  `user_id` bigint NOT NULL,
+  `nickname` varchar(50) DEFAULT NULL,
+  `avatar` varchar(500) DEFAULT NULL,
+  `gender` tinyint DEFAULT '2',
+  `intro` varchar(500) DEFAULT NULL,
+  `birthday` date DEFAULT NULL,
+  `location` varchar(100) DEFAULT NULL,
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`user_id`),
+  CONSTRAINT `fk_userinfo_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Table structure for table `category`
---
+INSERT INTO `sys_user_info` VALUES 
+(1,'系统管理员','https://cdn.myanimelist.net/images/anime/1015/138006l.jpg',1,'VMS动漫站管理员',NULL,NULL,NOW(),NOW()),
+(2,'动漫迷','https://cdn.myanimelist.net/images/anime/1441/122795l.jpg',1,'二次元爱好者~',NULL,NULL,NOW(),NOW());
 
+-- 3. 角色表
+DROP TABLE IF EXISTS `sys_role`;
+CREATE TABLE `sys_role` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `code` varchar(50) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `description` varchar(255) DEFAULT NULL,
+  `sort` int DEFAULT '0',
+  `status` tinyint DEFAULT '1',
+  `deleted` tinyint DEFAULT '0',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_code` (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `sys_role` VALUES 
+(1,'SUPER_ADMIN','超级管理员','拥有所有权限',0,1,0,NOW(),NOW()),
+(2,'user','普通用户','普通用户',2,1,0,NOW(),NOW()),
+(3,'admin','管理员','管理员',1,1,0,NOW(),NOW());
+
+-- 4. 权限表
+DROP TABLE IF EXISTS `sys_permission`;
+CREATE TABLE `sys_permission` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `code` varchar(100) NOT NULL,
+  `name` varchar(100) NOT NULL,
+  `type` varchar(20) DEFAULT 'MENU',
+  `parent_id` bigint DEFAULT '0',
+  `path` varchar(200) DEFAULT NULL,
+  `component` varchar(200) DEFAULT NULL,
+  `icon` varchar(100) DEFAULT NULL,
+  `sort` int DEFAULT '0',
+  `is_show` tinyint DEFAULT '1',
+  `is_enable` tinyint DEFAULT '1',
+  `keep_alive` tinyint DEFAULT '0',
+  `layout` varchar(50) DEFAULT NULL,
+  `redirect` varchar(200) DEFAULT NULL,
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_code` (`code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `sys_permission` VALUES 
+(1,'Dashboard','仪表盘','MENU',0,'/admin/dashboard','/src/views/vms/dashboard/index.vue','i-fe:bar-chart-2',0,1,1,0,NULL,NULL,NOW(),NOW()),
+(2,'UserMgt','用户管理','MENU',0,'/admin/pms/user','/src/views/pms/user/index.vue','i-fe:user',3,1,1,0,NULL,NULL,NOW(),NOW()),
+(3,'VideoMgt','视频管理','MENU',0,NULL,NULL,'i-fe:video',2,1,1,0,NULL,NULL,NOW(),NOW()),
+(4,'SystemMgt','系统管理','MENU',0,NULL,NULL,'i-fe:settings',10,1,1,0,NULL,NULL,NOW(),NOW()),
+(31,'VideoList','视频列表','MENU',3,'/admin/vms/video','/src/views/vms/video/index.vue','i-fe:list',1,1,1,0,NULL,NULL,NOW(),NOW()),
+(32,'CategoryList','分类管理','MENU',3,'/admin/vms/category','/src/views/vms/category/index.vue','i-fe:grid',2,1,1,0,NULL,NULL,NOW(),NOW()),
+(33,'TagList','标签管理','MENU',3,'/admin/vms/tag','/src/views/vms/tag/index.vue','i-fe:tag',3,1,1,0,NULL,NULL,NOW(),NOW()),
+(34,'BannerList','轮播图管理','MENU',3,'/admin/vms/banner','/src/views/vms/banner/index.vue','i-fe:image',4,1,1,0,NULL,NULL,NOW(),NOW()),
+(35,'CommentList','评论管理','MENU',3,'/admin/vms/comment','/src/views/vms/comment/index.vue','i-fe:message-square',5,1,1,0,NULL,NULL,NOW(),NOW()),
+(41,'RoleMgt','角色管理','MENU',4,'/admin/pms/role','/src/views/pms/role/index.vue','i-fe:shield',1,1,1,0,NULL,NULL,NOW(),NOW()),
+(42,'PermissionMgt','权限管理','MENU',4,'/admin/pms/resource','/src/views/pms/resource/index.vue','i-fe:lock',2,1,1,0,NULL,NULL,NOW(),NOW()),
+(43,'ConfigMgt','配置管理','MENU',4,'/admin/pms/config','/src/views/pms/config/index.vue','i-fe:sliders',3,1,1,0,NULL,NULL,NOW(),NOW()),
+(100,'user:add','新增用户','BUTTON',2,NULL,NULL,NULL,1,0,1,0,NULL,NULL,NOW(),NOW()),
+(101,'user:edit','编辑用户','BUTTON',2,NULL,NULL,NULL,2,0,1,0,NULL,NULL,NOW(),NOW()),
+(102,'user:delete','删除用户','BUTTON',2,NULL,NULL,NULL,3,0,1,0,NULL,NULL,NOW(),NOW()),
+(103,'video:add','新增视频','BUTTON',31,NULL,NULL,NULL,1,0,1,0,NULL,NULL,NOW(),NOW()),
+(104,'video:edit','编辑视频','BUTTON',31,NULL,NULL,NULL,2,0,1,0,NULL,NULL,NOW(),NOW()),
+(105,'video:delete','删除视频','BUTTON',31,NULL,NULL,NULL,3,0,1,0,NULL,NULL,NOW(),NOW());
+
+-- 5. 用户角色关联表
+DROP TABLE IF EXISTS `sys_user_role`;
+CREATE TABLE `sys_user_role` (
+  `user_id` bigint NOT NULL,
+  `role_id` bigint NOT NULL,
+  PRIMARY KEY (`user_id`,`role_id`),
+  CONSTRAINT `fk_ur_role` FOREIGN KEY (`role_id`) REFERENCES `sys_role` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_ur_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `sys_user_role` VALUES (1,1),(2,2);
+
+-- 6. 角色权限关联表
+DROP TABLE IF EXISTS `sys_role_permission`;
+CREATE TABLE `sys_role_permission` (
+  `role_id` bigint NOT NULL,
+  `permission_id` bigint NOT NULL,
+  PRIMARY KEY (`role_id`,`permission_id`),
+  CONSTRAINT `fk_rp_permission` FOREIGN KEY (`permission_id`) REFERENCES `sys_permission` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_rp_role` FOREIGN KEY (`role_id`) REFERENCES `sys_role` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `sys_role_permission` VALUES (1,1),(1,2),(1,3),(1,4),(1,31),(1,32),(1,33),(1,34),(1,35),(1,41),(1,42),(1,43),(1,100),(1,101),(1,102),(1,103),(1,104),(1,105),(3,1),(3,2),(3,3),(3,31),(3,32),(3,33),(3,34),(3,35),(3,100),(3,101),(3,102),(3,103),(3,104),(3,105);
+
+-- 7. 系统配置表
+DROP TABLE IF EXISTS `sys_config`;
+CREATE TABLE `sys_config` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `config_key` varchar(100) NOT NULL,
+  `config_value` text,
+  `config_type` varchar(20) DEFAULT 'STRING',
+  `description` varchar(255) DEFAULT NULL,
+  `is_system` tinyint DEFAULT '0',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_key` (`config_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `sys_config` VALUES 
+(1,'site_name','VMS动漫视频站','STRING','站点名称',1,NOW(),NOW()),
+(2,'site_logo','/logo.png','STRING','站点Logo',1,NOW(),NOW()),
+(3,'upload_max_size','104857600','NUMBER','最大上传大小',1,NOW(),NOW()),
+(4,'allowed_video_types','mp4,webm,mkv,avi,mov','STRING','允许的视频格式',1,NOW(),NOW()),
+(5,'allowed_image_types','jpg,jpeg,png,gif,webp','STRING','允许的图片格式',1,NOW(),NOW()),
+(6,'video_default_status','0','NUMBER','视频默认状态',1,NOW(),NOW()),
+(7,'comment_need_audit','false','BOOLEAN','评论是否需要审核',0,NOW(),NOW()),
+(8,'register_enabled','true','BOOLEAN','是否开放注册',0,NOW(),NOW());
+
+-- ========================================
+-- 二、视频模块
+-- ========================================
+
+-- 8. 分类表
 DROP TABLE IF EXISTS `category`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `category` (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
-  `name` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '分类名称',
-  `slug` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '别名(英文URL)',
-  `icon` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '图标URL',
-  `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '描述',
-  `parent_id` bigint DEFAULT '0' COMMENT '父分类ID(0=顶级)',
-  `sort` int DEFAULT '0' COMMENT '排序(小优先)',
-  `status` tinyint DEFAULT '1' COMMENT '状态: 1启用 0禁用',
-  `deleted` tinyint DEFAULT '0' COMMENT '软删除',
-  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) NOT NULL,
+  `slug` varchar(50) DEFAULT NULL,
+  `icon` varchar(255) DEFAULT NULL,
+  `description` varchar(255) DEFAULT NULL,
+  `parent_id` bigint DEFAULT '0',
+  `sort` int DEFAULT '0',
+  `status` tinyint DEFAULT '1',
+  `deleted` tinyint DEFAULT '0',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_name` (`name`),
-  KEY `idx_parent` (`parent_id`),
-  KEY `idx_sort` (`sort`),
-  KEY `idx_deleted` (`deleted`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='分类表';
-/*!40101 SET character_set_client = @saved_cs_client */;
+  UNIQUE KEY `uk_name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `category`
---
+INSERT INTO `category` VALUES 
+(1,'电影','movie','https://img.icons8.com/color/96/movie.png','院线大片、经典电影',0,1,1,0,NOW()),
+(2,'电视剧','tv','https://img.icons8.com/color/96/tv-show.png','热播剧集、网剧',0,2,1,0,NOW()),
+(3,'动漫','anime','https://img.icons8.com/color/96/anime.png','日本动漫、国产动画',0,3,1,0,NOW()),
+(4,'综艺','variety',NULL,'综艺节目',0,4,1,0,NOW()),
+(5,'纪录片','documentary',NULL,'纪录片',0,5,1,0,NOW()),
+(6,'游戏','game',NULL,'游戏视频',0,6,1,0,NOW()),
+(7,'音乐','music',NULL,'音乐MV',0,7,1,0,NOW()),
+(8,'短视频','short',NULL,'短视频',0,8,1,0,NOW());
 
-LOCK TABLES `category` WRITE;
-/*!40000 ALTER TABLE `category` DISABLE KEYS */;
-INSERT INTO `category` VALUES (1,'Movie_Final_Test','movie',NULL,NULL,0,1,1,0,'2025-12-22 16:44:57'),(2,'电影','tv',NULL,NULL,0,2,1,0,'2025-12-22 16:44:57'),(3,'动漫','anime',NULL,NULL,0,3,1,0,'2025-12-22 16:44:57'),(4,'综艺','variety',NULL,NULL,0,4,1,0,'2025-12-22 16:44:57'),(5,'Documentary_Updated','documentary',NULL,NULL,0,5,1,0,'2025-12-22 16:44:57'),(6,'游戏','game',NULL,NULL,0,6,1,0,'2025-12-22 16:44:57'),(7,'音乐','music',NULL,NULL,0,7,1,0,'2025-12-22 16:44:57'),(8,'短视频','short',NULL,NULL,0,8,1,0,'2025-12-22 16:44:57');
-/*!40000 ALTER TABLE `category` ENABLE KEYS */;
-UNLOCK TABLES;
+-- 9. 标签表
+DROP TABLE IF EXISTS `tag`;
+CREATE TABLE `tag` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) NOT NULL,
+  `color` varchar(20) DEFAULT '#409EFF',
+  `use_count` int DEFAULT '0',
+  `deleted` tinyint DEFAULT '0',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Table structure for table `comment`
---
+INSERT INTO `tag` VALUES 
+(1,'热门','#F56C6C',200,0,NOW()),
+(2,'推荐','#E6A23C',180,0,NOW()),
+(3,'新上线','#67C23A',160,0,NOW()),
+(4,'经典','#409EFF',150,0,NOW()),
+(5,'高分','#FB7299',140,0,NOW()),
+(6,'热血','#FF4757',250,0,NOW()),
+(7,'治愈','#70A1FF',220,0,NOW()),
+(8,'恋爱','#FF6B81',200,0,NOW()),
+(9,'校园','#7BED9F',190,0,NOW()),
+(10,'奇幻','#9B59B6',185,0,NOW()),
+(11,'冒险','#F39C12',180,0,NOW()),
+(12,'搞笑','#FFC312',175,0,NOW()),
+(13,'战斗','#E74C3C',170,0,NOW()),
+(14,'悬疑','#2C3E50',155,0,NOW()),
+(15,'运动','#2ECC71',150,0,NOW()),
+(16,'番剧','#00D2D3',500,0,NOW()),
+(17,'剧场版','#9B59B6',120,0,NOW()),
+(18,'科幻','#3498DB',110,0,NOW()),
+(19,'异世界','#E056FD',100,0,NOW()),
+(20,'后宫','#FF6B81',90,0,NOW());
 
+-- 10. 视频表
+DROP TABLE IF EXISTS `video`;
+CREATE TABLE `video` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `title` varchar(200) NOT NULL,
+  `intro` text,
+  `cover_url` varchar(500) DEFAULT NULL,
+  `video_url` varchar(500) DEFAULT NULL,
+  `category_id` bigint DEFAULT NULL,
+  `user_id` bigint NOT NULL,
+  `status` tinyint DEFAULT '0',
+  `view_count` int unsigned DEFAULT '0',
+  `like_count` int unsigned DEFAULT '0',
+  `favorite_count` int unsigned DEFAULT '0',
+  `comment_count` int unsigned DEFAULT '0',
+  `duration` int DEFAULT '0',
+  `is_vip` tinyint DEFAULT '0',
+  `publish_time` datetime DEFAULT NULL,
+  `deleted` tinyint DEFAULT '0',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_category` (`category_id`),
+  KEY `idx_user` (`user_id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_view` (`view_count` DESC),
+  KEY `idx_create` (`create_time` DESC),
+  KEY `idx_deleted` (`deleted`),
+  FULLTEXT KEY `ft_title` (`title`),
+  CONSTRAINT `fk_video_category` FOREIGN KEY (`category_id`) REFERENCES `category` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_video_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 动漫视频数据 (使用网络URL)
+INSERT INTO `video` VALUES 
+-- 热门番剧
+(1,'鬼灭之刃：无限列车篇','炭治郎与善逸、伊之助一同踏上无限列车,与炎柱一起对抗上弦之叁。这是一场生死存亡的战斗!','https://cdn.myanimelist.net/images/anime/1286/99889l.jpg','https://www.bilibili.com/video/BV1cs411c7DQ',3,1,2,125000,8500,3200,450,7200,0,NOW(),0,NOW(),NOW()),
+(2,'进击的巨人 最终季','一百年前人类被巨人消灭。艾伦在目睹母亲被巨人吞噬后,发誓要消灭所有巨人。','https://cdn.myanimelist.net/images/anime/1000/110531l.jpg','https://www.bilibili.com/video/BV1qK4y1Y7Wm',3,1,2,180000,12000,5600,890,1440,0,NOW(),0,NOW(),NOW()),
+(3,'咒术回战 第二季','虎杖悠仁吞下特级咒物成为宿傩的容器,涩谷事变篇震撼来袭！','https://cdn.myanimelist.net/images/anime/1171/109222l.jpg','https://www.bilibili.com/video/BV1dK411f7Es',3,1,2,95000,6800,2100,320,1440,0,NOW(),0,NOW(),NOW()),
+(4,'间谍过家家 SPY×FAMILY','代号黄昏的间谍组建临时家庭,妻子是杀手,女儿是超能力者!温馨又刺激!','https://cdn.myanimelist.net/images/anime/1441/122795l.jpg','https://www.bilibili.com/video/BV1FZ4y1T7nc',3,1,2,85000,7200,2800,560,1440,0,NOW(),0,NOW(),NOW()),
+(5,'蓝色监狱 BLUE LOCK','日本足球协会启动蓝色监狱计划,打造世界第一的利己主义前锋!','https://cdn.myanimelist.net/images/anime/1258/126929l.jpg','https://www.bilibili.com/video/BV1Lg411P7UL',3,1,2,72000,4500,1800,280,1440,0,NOW(),0,NOW(),NOW()),
+(6,'葬送的芙莉莲 Frieren','精灵魔法使芙莉莲击败魔王后,开始思考人类的短暂与相遇的意义。治愈又充满哲思。','https://cdn.myanimelist.net/images/anime/1015/138006l.jpg','https://www.bilibili.com/video/BV1Au4y1Z7mS',3,1,2,110000,9500,4200,680,1440,0,NOW(),0,NOW(),NOW()),
+(7,'【推しの子】我推的孩子','产科医生转生成偶像的孩子,开始复仇之路...','https://cdn.myanimelist.net/images/anime/1812/134736l.jpg','https://www.bilibili.com/video/BV1Jo4y1X7Kp',3,1,2,142000,11000,4800,920,5400,0,NOW(),0,NOW(),NOW()),
+(8,'药屋少女的呢喃','猫猫凭借药学知识,解开后宫谜团,赢得壬氏赏识...','https://cdn.myanimelist.net/images/anime/1708/138033l.jpg','https://www.bilibili.com/video/BV1Ju4y1c7Qd',3,1,2,88000,6200,2600,340,1440,0,NOW(),0,NOW(),NOW()),
+(9,'迷宫饭 Delicious in Dungeon','为救被红龙吞噬的妹妹,一行人用魔物料理补充体力!','https://cdn.myanimelist.net/images/anime/1711/142478l.jpg','https://www.bilibili.com/video/BV1fC4y1K7Lq',3,1,2,65000,4800,1900,260,1440,0,NOW(),0,NOW(),NOW()),
+
+-- 新海诚剧场版
+(10,'你的名字。','东京高中生与地方小镇女高中生在梦中交换身体,命运开始转动...','https://cdn.myanimelist.net/images/anime/5/87048l.jpg','https://www.bilibili.com/video/BV1Ws411f7GY',3,1,2,220000,18000,9500,1200,6420,1,NOW(),0,NOW(),NOW()),
+(11,'铃芽之旅 Suzume','17岁少女铃芽为关闭引发灾难的门,踏上穿越日本的旅程...','https://cdn.myanimelist.net/images/anime/1154/139601l.jpg','https://www.bilibili.com/video/BV1SM411S7hP',3,1,2,135000,10500,4600,580,7320,0,NOW(),0,NOW(),NOW()),
+(12,'天气之子','高中生帆高遇到拥有操控天气能力的少女阳菜,两人命运交织...','https://cdn.myanimelist.net/images/anime/1880/101146l.jpg','https://www.bilibili.com/video/BV1tJ411w7n2',3,1,2,118000,8800,3800,420,6780,0,NOW(),0,NOW(),NOW()),
+(13,'秒速5厘米','三个关于距离和时间的短篇故事,诉说着青涩的爱情...','https://cdn.myanimelist.net/images/anime/1410/112994l.jpg','https://www.bilibili.com/video/BV1Ks411f7xm',3,1,2,92000,7200,3100,380,3900,0,NOW(),0,NOW(),NOW()),
+
+-- 经典热血
+(14,'一拳超人 One Punch Man','秃头英雄埼玉任何敌人只需一拳解决,寻找强敌的旅程!','https://cdn.myanimelist.net/images/anime/12/76049l.jpg','https://www.bilibili.com/video/BV1Ws411f7gu',3,1,2,165000,12500,5200,780,1440,0,NOW(),0,NOW(),NOW()),
+(15,'钢之炼金术师 FA','爱德华兄弟为复活母亲付出惨痛代价,踏上寻找贤者之石之旅...','https://cdn.myanimelist.net/images/anime/1223/96541l.jpg','https://www.bilibili.com/video/BV1ks411f7yN',3,1,2,195000,15000,7200,980,1440,0,NOW(),0,NOW(),NOW()),
+(16,'死亡笔记 Death Note','高中生夜神月捡到死神笔记,开始制裁罪犯的计划...','https://cdn.myanimelist.net/images/anime/9/9453l.jpg','https://www.bilibili.com/video/BV1Gs411f7q2',3,1,2,175000,13500,6100,850,1440,0,NOW(),0,NOW(),NOW()),
+(17,'JOJO的奇妙冒险','乔斯达家族与DIO的宿命对决,替身能力热血战斗!','https://cdn.myanimelist.net/images/anime/3/40409l.jpg','https://www.bilibili.com/video/BV1es41147Xr',3,1,2,145000,11200,4900,720,1440,0,NOW(),0,NOW(),NOW()),
+
+-- 恋爱校园
+(18,'辉夜大小姐想让我告白','学生会会长与副会长的恋爱头脑战!互相喜欢却都不愿先告白','https://cdn.myanimelist.net/images/anime/1295/106551l.jpg','https://www.bilibili.com/video/BV1Bb411P7br',3,1,2,92000,7600,3100,520,1440,0,NOW(),0,NOW(),NOW()),
+(19,'紫罗兰永恒花园','战争武器少女薇尔莉特,为理解"我爱你"成为代笔作家...','https://cdn.myanimelist.net/images/anime/1795/95088l.jpg','https://www.bilibili.com/video/BV1Ws411f7hC',3,1,2,108000,9200,4500,680,1440,1,NOW(),0,NOW(),NOW()),
+(20,'四月是你的谎言','钢琴天才与小提琴少女的感人故事,音乐与青春的交织...','https://cdn.myanimelist.net/images/anime/3/67177l.jpg','https://www.bilibili.com/video/BV1Ks411f71d',3,1,2,135000,11000,5200,750,1440,0,NOW(),0,NOW(),NOW()),
+(21,'龙与虎','大河和龙儿的欢喜冤家恋爱喜剧,经典校园番!','https://cdn.myanimelist.net/images/anime/13/22232l.jpg','https://www.bilibili.com/video/BV1Gs411f7Y2',3,1,2,88000,6800,2900,480,1440,0,NOW(),0,NOW(),NOW()),
+
+-- 治愈系
+(22,'夏目友人帐','能看见妖怪的少年夏目,继承了祖母的友人帐,治愈人心的故事...','https://cdn.myanimelist.net/images/anime/1064/142774l.jpg','https://www.bilibili.com/video/BV1es41157R9',3,1,2,125000,10500,4800,620,1440,0,NOW(),0,NOW(),NOW()),
+(23,'轻音少女 K-ON!','女子高中轻音部的日常,萌系治愈经典!','https://cdn.myanimelist.net/images/anime/10/76120l.jpg','https://www.bilibili.com/video/BV1Ws411f79j',3,1,2,95000,7800,3400,520,1440,0,NOW(),0,NOW(),NOW()),
+(24,'少女终末旅行','末世两个少女驾驶半履带车旅行,废土治愈风格','https://cdn.myanimelist.net/images/anime/4/88019l.jpg','https://www.bilibili.com/video/BV1Ks411F7gC',3,1,2,72000,5600,2400,380,1440,0,NOW(),0,NOW(),NOW()),
+
+-- 异世界
+(25,'Re:从零开始的异世界生活','菜月�的被召唤到异世界,拥有死亡回归能力...','https://cdn.myanimelist.net/images/anime/1522/128039l.jpg','https://www.bilibili.com/video/BV1ks411f7ed',3,1,2,155000,12800,5800,820,1440,0,NOW(),0,NOW(),NOW()),
+(26,'无职转生','34岁废宅转生异世界,这次要认真活下去!','https://cdn.myanimelist.net/images/anime/1530/117776l.jpg','https://www.bilibili.com/video/BV1HZ4y1r7Xv',3,1,2,138000,11200,4900,720,1440,0,NOW(),0,NOW(),NOW()),
+(27,'关于我转生变成史莱姆这档事','社畜转生成史莱姆,建立魔物国家的故事!','https://cdn.myanimelist.net/images/anime/1694/93337l.jpg','https://www.bilibili.com/video/BV1rs411Q7f4',3,1,2,128000,10200,4500,680,1440,0,NOW(),0,NOW(),NOW()),
+(28,'为美好的世界献上祝福!','废柴勇者和问题女神的搞笑异世界冒险!','https://cdn.myanimelist.net/images/anime/8/77831l.jpg','https://www.bilibili.com/video/BV1Gs411f7Ym',3,1,2,115000,9200,4100,620,1440,0,NOW(),0,NOW(),NOW()),
+
+-- 宫崎骏
+(29,'千与千寻','少女千寻误入神灵世界,在汤婆婆的汤屋工作...奥斯卡获奖作品','https://cdn.myanimelist.net/images/anime/6/79597l.jpg','https://www.bilibili.com/video/BV1ks411f7Qj',3,1,2,250000,22000,12000,1500,7500,1,NOW(),0,NOW(),NOW()),
+(30,'哈尔的移动城堡','少女苏菲被诅咒变成老太婆,遇到魔法师哈尔...','https://cdn.myanimelist.net/images/anime/5/75810l.jpg','https://www.bilibili.com/video/BV1Ws411f7Yy',3,1,2,185000,16500,8200,1100,7200,0,NOW(),0,NOW(),NOW()),
+(31,'龙猫','两姐妹在乡下遇到森林精灵龙猫,温馨治愈的经典之作','https://cdn.myanimelist.net/images/anime/4/75923l.jpg','https://www.bilibili.com/video/BV1ks411f7nP',3,1,2,175000,15500,7800,980,5100,0,NOW(),0,NOW(),NOW()),
+(32,'幽灵公主','少年阿席达卡为解除诅咒,卷入人类与自然的战争...','https://cdn.myanimelist.net/images/anime/7/75919l.jpg','https://www.bilibili.com/video/BV1Gs411f7sD',3,1,2,165000,14000,6800,880,7860,0,NOW(),0,NOW(),NOW()),
+
+-- 更多热门
+(33,'电锯人 Chainsaw Man','电次与恶魔波奇塔融合,成为电锯人对抗恶魔!','https://cdn.myanimelist.net/images/anime/1806/126216l.jpg','https://www.bilibili.com/video/BV1WP411H7Hy',3,1,2,148000,12200,5400,780,1440,0,NOW(),0,NOW(),NOW()),
+(34,'孤独摇滚!','社恐少女后藤一里加入乐队,追逐音乐梦想!','https://cdn.myanimelist.net/images/anime/1448/127956l.jpg','https://www.bilibili.com/video/BV1oG4y1n7Mw',3,1,2,105000,8900,4100,620,1440,0,NOW(),0,NOW(),NOW()),
+(35,'命运之夜 UBW','Fate系列经典,卫宫士郎与Saber的圣杯战争!','https://cdn.myanimelist.net/images/anime/1791/95459l.jpg','https://www.bilibili.com/video/BV1Ws411f7MX',3,1,2,132000,10800,4800,720,1440,0,NOW(),0,NOW(),NOW()),
+(36,'工作细胞','拟人化细胞们的体内大冒险,寓教于乐!','https://cdn.myanimelist.net/images/anime/1708/93609l.jpg','https://www.bilibili.com/video/BV1rt41177W4',3,1,2,98000,7800,3400,520,1440,0,NOW(),0,NOW(),NOW()),
+(37,'排球少年!!','乌野高中排球部的热血故事,运动番巅峰!','https://cdn.myanimelist.net/images/anime/7/76014l.jpg','https://www.bilibili.com/video/BV1es411f7aB',3,1,2,142000,11500,5100,750,1440,0,NOW(),0,NOW(),NOW()),
+(38,'灌篮高手 电影版','湘北VS山王!传说中的比赛终于动画化!','https://cdn.myanimelist.net/images/anime/1274/128039l.jpg','https://www.bilibili.com/video/BV1dP411c7y9',3,1,2,188000,16000,7500,1050,7560,1,NOW(),0,NOW(),NOW()),
+(39,'刀剑神域','桐人被困在虚拟现实游戏中,必须通关才能逃出...','https://cdn.myanimelist.net/images/anime/11/39717l.jpg','https://www.bilibili.com/video/BV1es411f7M2',3,1,2,168000,13200,5900,850,1440,0,NOW(),0,NOW(),NOW()),
+(40,'魔法少女小圆','颠覆魔法少女题材的黑暗神作!','https://cdn.myanimelist.net/images/anime/1762/106377l.jpg','https://www.bilibili.com/video/BV1Gs411f7nC',3,1,2,125000,10500,4800,720,1440,0,NOW(),0,NOW(),NOW());
+
+-- 11. 视频分集表
+DROP TABLE IF EXISTS `video_episode`;
+CREATE TABLE `video_episode` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `video_id` bigint NOT NULL,
+  `title` varchar(100) DEFAULT NULL,
+  `file_url` varchar(500) NOT NULL,
+  `cover_url` varchar(500) DEFAULT NULL,
+  `duration` int DEFAULT '0',
+  `sort` int DEFAULT '0',
+  `is_free` tinyint DEFAULT '1',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_video` (`video_id`),
+  CONSTRAINT `fk_episode_video` FOREIGN KEY (`video_id`) REFERENCES `video` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 12. 视频标签关联表
+DROP TABLE IF EXISTS `video_tag_rel`;
+CREATE TABLE `video_tag_rel` (
+  `video_id` bigint NOT NULL,
+  `tag_id` bigint NOT NULL,
+  PRIMARY KEY (`video_id`,`tag_id`),
+  KEY `idx_tag` (`tag_id`),
+  CONSTRAINT `fk_rel_tag` FOREIGN KEY (`tag_id`) REFERENCES `tag` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_rel_video` FOREIGN KEY (`video_id`) REFERENCES `video` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `video_tag_rel` VALUES 
+(1,1),(1,6),(1,13),(1,16),(2,1),(2,6),(2,13),(2,14),(2,16),(3,1),(3,6),(3,13),(3,16),(4,1),(4,7),(4,12),(4,16),
+(5,6),(5,15),(5,16),(6,1),(6,7),(6,10),(6,11),(6,16),(7,1),(7,14),(7,16),(8,7),(8,14),(8,16),(9,11),(9,12),(9,16),
+(10,1),(10,5),(10,8),(10,17),(11,10),(11,11),(11,17),(12,8),(12,10),(12,17),(13,4),(13,8),(13,17),
+(14,1),(14,6),(14,12),(14,13),(14,16),(15,1),(15,4),(15,6),(15,11),(15,16),(16,1),(16,14),(16,16),(17,1),(17,6),(17,13),(17,16),
+(18,1),(18,8),(18,9),(18,12),(18,16),(19,1),(19,5),(19,7),(19,16),(20,5),(20,7),(20,8),(20,16),(21,8),(21,9),(21,12),(21,16),
+(22,1),(22,7),(22,16),(23,7),(23,9),(23,16),(24,7),(24,18),(24,16),
+(25,1),(25,10),(25,19),(25,16),(26,1),(26,10),(26,19),(26,16),(27,10),(27,12),(27,19),(27,16),(28,10),(28,12),(28,19),(28,16),
+(29,1),(29,4),(29,5),(29,10),(29,17),(30,4),(30,5),(30,10),(30,17),(31,4),(31,5),(31,7),(31,17),(32,4),(32,5),(32,10),(32,17),
+(33,1),(33,6),(33,13),(33,16),(34,1),(34,7),(34,9),(34,16),(35,1),(35,6),(35,10),(35,16),(36,7),(36,12),(36,16),(37,1),(37,6),(37,15),(37,16),(38,1),(38,4),(38,15),(38,17),(39,1),(39,10),(39,19),(39,16),(40,1),(40,5),(40,10),(40,16);
+
+-- ========================================
+-- 三、互动模块
+-- ========================================
+
+-- 13. 评论表
 DROP TABLE IF EXISTS `comment`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `comment` (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
-  `video_id` bigint NOT NULL COMMENT '视频ID',
-  `user_id` bigint NOT NULL COMMENT '用户ID',
-  `parent_id` bigint DEFAULT '0' COMMENT '父评论ID(0=顶级)',
-  `reply_user_id` bigint DEFAULT NULL COMMENT '回复目标用户ID',
-  `content` text COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '内容',
-  `like_count` int unsigned DEFAULT '0' COMMENT '点赞数',
-  `status` tinyint DEFAULT '1' COMMENT '状态: 1正常 0隐藏',
-  `deleted` tinyint DEFAULT '0' COMMENT '软删除',
-  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `video_id` bigint NOT NULL,
+  `user_id` bigint NOT NULL,
+  `parent_id` bigint DEFAULT '0',
+  `reply_user_id` bigint DEFAULT NULL,
+  `content` text NOT NULL,
+  `like_count` int unsigned DEFAULT '0',
+  `status` tinyint DEFAULT '1',
+  `deleted` tinyint DEFAULT '0',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_video` (`video_id`),
   KEY `idx_user` (`user_id`),
-  KEY `idx_parent` (`parent_id`),
-  KEY `idx_create` (`create_time` DESC),
-  KEY `idx_deleted` (`deleted`),
   CONSTRAINT `fk_comment_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_comment_video` FOREIGN KEY (`video_id`) REFERENCES `video` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='评论表';
-/*!40101 SET character_set_client = @saved_cs_client */;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Dumping data for table `comment`
---
+INSERT INTO `comment` VALUES 
+(1,1,2,0,NULL,'炎柱太帅了！这场战斗看哭了😭',256,1,0,NOW()),
+(2,1,1,0,NULL,'无限列车篇真的是神作！画面质量爆表',189,1,0,NOW()),
+(3,2,2,0,NULL,'艾伦到底是怎么想的...这剧情太虐了',320,1,0,NOW()),
+(4,2,1,0,NULL,'最终季的战斗场面太震撼了！',278,1,0,NOW()),
+(5,6,2,0,NULL,'这部番太治愈了，芙莉莲超可爱！',167,1,0,NOW()),
+(6,6,1,0,NULL,'欣梅尔才是真正的勇者啊...',198,1,0,NOW()),
+(7,4,2,0,NULL,'阿尼亚太可爱了哇库哇库！',456,1,0,NOW()),
+(8,4,1,0,NULL,'这一家人的互动太有爱了',289,1,0,NOW()),
+(9,10,2,0,NULL,'新海诚永远的神！画面美到窒息',567,1,0,NOW()),
+(10,10,1,0,NULL,'前前前世太好听了，已循环一万遍',378,1,0,NOW()),
+(11,7,2,0,NULL,'第一集就封神！开局直接高能',398,1,0,NOW()),
+(12,7,1,0,NULL,'YOASOBI的OP简直绝了！',512,1,0,NOW()),
+(13,29,2,0,NULL,'宫崎骏永远的神作！千寻真勇敢',678,1,0,NOW()),
+(14,29,1,0,NULL,'这部电影陪伴了我的童年',589,1,0,NOW()),
+(15,15,2,0,NULL,'钢炼神作无疑！大佐帅炸了',445,1,0,NOW()),
+(16,15,1,0,NULL,'等价交换的道理让我记忆深刻',387,1,0,NOW()),
+(17,33,2,0,NULL,'电锯人太燃了！MAPPA制作太顶了',356,1,0,NOW()),
+(18,34,1,0,NULL,'波奇酱社恐代入感太强了😂',423,1,0,NOW()),
+(19,38,2,0,NULL,'湘北VS山王！等了多少年的动画版！',567,1,0,NOW()),
+(20,22,1,0,NULL,'夏目太治愈了，每一集都想哭',334,1,0,NOW());
 
-LOCK TABLES `comment` WRITE;
-/*!40000 ALTER TABLE `comment` DISABLE KEYS */;
-INSERT INTO `comment` VALUES (1,1,3,0,NULL,'test001',0,1,0,'2025-12-24 16:32:34'),(2,1,3,0,NULL,'测试评论功能',0,1,0,'2025-12-24 16:37:45'),(3,1,3,0,NULL,'测试评论功能',0,1,0,'2025-12-24 16:46:03'),(4,1,3,0,NULL,'test001',0,1,0,'2025-12-24 16:53:04'),(5,1,3,0,NULL,'🥰',0,1,0,'2025-12-24 17:11:13');
-/*!40000 ALTER TABLE `comment` ENABLE KEYS */;
-UNLOCK TABLES;
+-- 14. 用户收藏表
+DROP TABLE IF EXISTS `user_favorite`;
+CREATE TABLE `user_favorite` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL,
+  `video_id` bigint NOT NULL,
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_video` (`user_id`,`video_id`),
+  CONSTRAINT `fk_fav_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_fav_video` FOREIGN KEY (`video_id`) REFERENCES `video` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Table structure for table `danmaku`
---
+INSERT INTO `user_favorite` VALUES 
+(1,1,1,NOW()),(2,1,6,NOW()),(3,1,10,NOW()),(4,1,29,NOW()),(5,1,15,NOW()),
+(6,2,1,NOW()),(7,2,4,NOW()),(8,2,7,NOW()),(9,2,29,NOW()),(10,2,33,NOW());
 
+-- 15. 用户点赞表
+DROP TABLE IF EXISTS `user_like`;
+CREATE TABLE `user_like` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL,
+  `target_type` tinyint NOT NULL,
+  `target_id` bigint NOT NULL,
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_target` (`user_id`,`target_type`,`target_id`),
+  CONSTRAINT `fk_like_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `user_like` VALUES 
+(1,1,1,1,NOW()),(2,1,1,6,NOW()),(3,1,1,10,NOW()),(4,1,1,29,NOW()),(5,1,1,15,NOW()),
+(6,2,1,1,NOW()),(7,2,1,4,NOW()),(8,2,1,7,NOW()),(9,2,1,33,NOW()),(10,2,1,38,NOW());
+
+-- 16. 观看历史表
+DROP TABLE IF EXISTS `watch_history`;
+CREATE TABLE `watch_history` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `user_id` bigint NOT NULL,
+  `video_id` bigint NOT NULL,
+  `episode_id` bigint DEFAULT NULL,
+  `watch_duration` int DEFAULT '0',
+  `watch_progress` int DEFAULT '0',
+  `last_watch_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_video` (`user_id`,`video_id`),
+  CONSTRAINT `fk_history_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_history_video` FOREIGN KEY (`video_id`) REFERENCES `video` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `watch_history` VALUES 
+(1,1,1,NULL,3600,3600,NOW()),(2,1,6,NULL,1200,1200,NOW()),(3,1,10,NULL,5400,5400,NOW()),(4,1,29,NULL,7200,7200,NOW()),
+(5,2,4,NULL,720,720,NOW()),(6,2,7,NULL,2400,2400,NOW()),(7,2,33,NULL,1440,1440,NOW()),(8,2,38,NULL,4800,4800,NOW());
+
+-- 17. 弹幕表
 DROP TABLE IF EXISTS `danmaku`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `danmaku` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `video_id` bigint NOT NULL,
@@ -154,491 +485,66 @@ CREATE TABLE `danmaku` (
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   KEY `idx_video_time` (`video_id`,`time`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
---
--- Dumping data for table `danmaku`
---
+INSERT INTO `danmaku` VALUES 
+(1,1,1,'炎柱出场！',120.5,'#FF4757',1,25,NOW()),
+(2,1,2,'燃起来了🔥',180.2,'#FFA502',1,25,NOW()),
+(3,1,1,'这一击帅爆！',240.8,'#FF6B81',1,25,NOW()),
+(4,2,1,'艾伦变了...',60.0,'#2C3E50',1,25,NOW()),
+(5,2,2,'这场战斗太精彩了',300.2,'#E74C3C',1,25,NOW()),
+(6,6,1,'芙莉莲好可爱',30.0,'#70A1FF',1,25,NOW()),
+(7,6,2,'这节奏真舒服',120.5,'#7BED9F',1,25,NOW()),
+(8,4,1,'哇库哇库！',15.0,'#FF6B81',1,25,NOW()),
+(9,4,2,'阿尼亚赛高！',60.5,'#FF6B81',1,25,NOW()),
+(10,10,1,'画面太美了！',10.0,'#70A1FF',1,25,NOW()),
+(11,10,2,'新海诚yyds',60.0,'#9B59B6',1,25,NOW()),
+(12,10,1,'前前前世来了！',120.5,'#FF4757',1,25,NOW()),
+(13,29,1,'千寻加油！',180.0,'#70A1FF',1,25,NOW()),
+(14,29,2,'无脸男好可怜',240.0,'#2C3E50',1,25,NOW()),
+(15,15,1,'等价交换！',60.0,'#FFA502',1,25,NOW()),
+(16,15,2,'大佐！！！',180.5,'#E74C3C',1,25,NOW()),
+(17,33,1,'电锯人！！',30.0,'#FF4757',1,25,NOW()),
+(18,33,2,'波奇塔可爱',90.0,'#FFC312',1,25,NOW()),
+(19,38,1,'灌篮高手YYDS',10.0,'#FF4757',1,25,NOW()),
+(20,38,2,'流川枫帅！',120.0,'#3498DB',1,25,NOW());
 
-LOCK TABLES `danmaku` WRITE;
-/*!40000 ALTER TABLE `danmaku` DISABLE KEYS */;
-INSERT INTO `danmaku` VALUES (1,1,1,'这个视频真不错！',3.5,'#FFFFFF',1,25,'2025-12-24 20:24:31'),(2,1,2,'前排围观',1,'#FB7299',1,25,'2025-12-24 20:24:31'),(3,1,3,'好看好看',8.2,'#00AEEC',1,25,'2025-12-24 20:24:31'),(4,1,4,'你好',6.44843,'#FFFFFF',1,25,'2025-12-24 23:15:27');
-/*!40000 ALTER TABLE `danmaku` ENABLE KEYS */;
-UNLOCK TABLES;
+-- ========================================
+-- 四、运营模块 - 轮播图
+-- ========================================
 
---
--- Table structure for table `sys_config`
---
+DROP TABLE IF EXISTS `banner`;
+CREATE TABLE `banner` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `title` varchar(100) DEFAULT NULL,
+  `img_url` varchar(500) NOT NULL,
+  `link_url` varchar(500) DEFAULT NULL,
+  `link_type` tinyint DEFAULT '0',
+  `target_id` bigint DEFAULT NULL,
+  `sort` int DEFAULT '0',
+  `is_show` tinyint DEFAULT '1',
+  `start_time` datetime DEFAULT NULL,
+  `end_time` datetime DEFAULT NULL,
+  `deleted` tinyint DEFAULT '0',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-DROP TABLE IF EXISTS `sys_config`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `sys_config` (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-  `config_key` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '配置键(唯一)',
-  `config_value` text COLLATE utf8mb4_unicode_ci COMMENT '配置值',
-  `config_type` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT 'STRING' COMMENT '类型: STRING/NUMBER/BOOLEAN/JSON',
-  `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '配置描述',
-  `is_system` tinyint DEFAULT '0' COMMENT '系统内置: 1是 0否(系统内置不可删除)',
-  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_key` (`config_key`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='系统配置表';
-/*!40101 SET character_set_client = @saved_cs_client */;
+-- 使用网络高清横幅图
+INSERT INTO `banner` VALUES 
+(1,'🔥 鬼灭之刃 无限列车篇','https://img1.doubanio.com/view/photo/l/public/p2625893421.webp','/video/1',1,1,1,1,NULL,NULL,0,NOW()),
+(2,'⚔️ 进击的巨人 最终季','https://img2.doubanio.com/view/photo/l/public/p2629391767.webp','/video/2',1,2,2,1,NULL,NULL,0,NOW()),
+(3,'✨ 葬送的芙莉莲','https://img1.doubanio.com/view/photo/l/public/p2899536188.webp','/video/6',1,6,3,1,NULL,NULL,0,NOW()),
+(4,'💕 间谍过家家','https://img9.doubanio.com/view/photo/l/public/p2870136454.webp','/video/4',1,4,4,1,NULL,NULL,0,NOW()),
+(5,'🌟 你的名字','https://img2.doubanio.com/view/photo/l/public/p2395733377.webp','/video/10',1,10,5,1,NULL,NULL,0,NOW()),
+(6,'⭐ 千与千寻','https://img1.doubanio.com/view/photo/l/public/p2557573348.webp','/video/29',1,29,6,1,NULL,NULL,0,NOW()),
+(7,'🏀 灌篮高手 电影版','https://img2.doubanio.com/view/photo/l/public/p2885542436.webp','/video/38',1,38,7,1,NULL,NULL,0,NOW()),
+(8,'⚡ 电锯人','https://img1.doubanio.com/view/photo/l/public/p2883795838.webp','/video/33',1,33,8,1,NULL,NULL,0,NOW());
 
---
--- Dumping data for table `sys_config`
---
-
-LOCK TABLES `sys_config` WRITE;
-/*!40000 ALTER TABLE `sys_config` DISABLE KEYS */;
-INSERT INTO `sys_config` VALUES (1,'site_name','VMS视频管理系统','STRING','站点名称',1,'2025-12-22 16:44:57','2025-12-22 16:44:57'),(2,'site_logo','/logo.png','STRING','站点Logo',1,'2025-12-22 16:44:57','2025-12-22 16:44:57'),(3,'upload_max_size','104857600','NUMBER','最大上传大小(字节,默认100MB)',1,'2025-12-22 16:44:57','2025-12-22 16:44:57'),(4,'allowed_video_types','mp4,webm,mkv,avi,mov','STRING','允许的视频格式',1,'2025-12-22 16:44:57','2025-12-22 16:44:57'),(5,'allowed_image_types','jpg,jpeg,png,gif,webp','STRING','允许的图片格式',1,'2025-12-22 16:44:57','2025-12-22 16:44:57'),(6,'video_default_status','0','NUMBER','视频默认状态(0草稿)',1,'2025-12-22 16:44:57','2025-12-22 16:44:57'),(7,'comment_need_audit','false','BOOLEAN','评论是否需要审核',0,'2025-12-22 16:44:57','2025-12-22 16:44:57'),(8,'register_enabled','true','BOOLEAN','是否开放注册',0,'2025-12-22 16:44:57','2025-12-22 16:44:57');
-/*!40000 ALTER TABLE `sys_config` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `sys_permission`
---
-
-DROP TABLE IF EXISTS `sys_permission`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `sys_permission` (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-  `code` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '权限编码(唯一)',
-  `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '权限名称',
-  `type` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT 'MENU' COMMENT '类型: MENU菜单 BUTTON按钮 API接口',
-  `parent_id` bigint DEFAULT '0' COMMENT '父权限ID(0=顶级)',
-  `path` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '路由路径',
-  `component` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '组件路径',
-  `icon` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '图标',
-  `sort` int DEFAULT '0' COMMENT '排序',
-  `is_show` tinyint DEFAULT '1' COMMENT '是否显示: 1是 0否',
-  `is_enable` tinyint DEFAULT '1' COMMENT '是否启用: 1是 0否',
-  `keep_alive` tinyint DEFAULT '0' COMMENT '是否KeepAlive: 1是 0否',
-  `layout` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '布局模式',
-  `redirect` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '重定向路径',
-  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_code` (`code`),
-  KEY `idx_parent` (`parent_id`),
-  KEY `idx_type` (`type`),
-  KEY `idx_sort` (`sort`)
-) ENGINE=InnoDB AUTO_INCREMENT=106 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='权限表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `sys_permission`
---
-
-LOCK TABLES `sys_permission` WRITE;
-/*!40000 ALTER TABLE `sys_permission` DISABLE KEYS */;
-INSERT INTO `sys_permission` VALUES (1,'Dashboard','仪表盘','MENU',0,'/admin/dashboard','/src/views/vms/dashboard/index.vue','i-fe:bar-chart-2',0,1,1,0,NULL,NULL,'2025-12-22 16:44:57','2025-12-23 15:09:05'),(2,'UserMgt','用户管理','MENU',0,'/admin/pms/user','/src/views/pms/user/index.vue','i-fe:user',3,1,1,0,NULL,NULL,'2025-12-22 16:44:57','2025-12-22 16:44:57'),(3,'VideoMgt','视频管理','MENU',0,NULL,NULL,'i-fe:video',2,1,1,0,NULL,NULL,'2025-12-22 16:44:57','2025-12-22 16:44:57'),(4,'SystemMgt','系统管理','MENU',0,NULL,NULL,'i-fe:settings',10,1,1,0,NULL,NULL,'2025-12-22 16:44:57','2025-12-22 16:44:57'),(31,'VideoList','视频列表','MENU',3,'/admin/vms/video','/src/views/vms/video/index.vue','i-fe:list',1,1,1,0,NULL,NULL,'2025-12-22 16:44:57','2025-12-22 16:44:57'),(32,'CategoryList','分类管理','MENU',3,'/admin/vms/category','/src/views/vms/category/index.vue','i-fe:grid',2,1,1,0,NULL,NULL,'2025-12-22 16:44:57','2025-12-22 16:44:57'),(33,'TagList','标签管理','MENU',3,'/admin/vms/tag','/src/views/vms/tag/index.vue','i-fe:tag',3,1,1,0,NULL,NULL,'2025-12-22 16:44:57','2025-12-22 16:44:57'),(34,'BannerList','轮播图管理','MENU',3,'/admin/vms/banner','/src/views/vms/banner/index.vue','i-fe:image',4,1,1,0,NULL,NULL,'2025-12-22 16:44:57','2025-12-22 16:44:57'),(35,'CommentList','评论管理','MENU',3,'/admin/vms/comment','/src/views/vms/comment/index.vue','i-fe:message-square',5,1,1,0,NULL,NULL,'2025-12-22 16:44:57','2025-12-22 16:44:57'),(41,'RoleMgt','角色管理','MENU',4,'/admin/pms/role','/src/views/pms/role/index.vue','i-fe:shield',1,1,1,0,NULL,NULL,'2025-12-22 16:44:57','2025-12-23 12:31:50'),(42,'PermissionMgt','权限管理','MENU',4,'/admin/pms/resource','/src/views/pms/resource/index.vue','i-fe:lock',2,1,1,0,NULL,NULL,'2025-12-22 16:44:57','2025-12-23 12:31:50'),(43,'ConfigMgt','配置管理','MENU',4,'/admin/pms/config','/src/views/pms/config/index.vue','i-fe:sliders',3,1,1,0,NULL,NULL,'2025-12-22 16:44:57','2025-12-23 12:31:50'),(100,'user:add','新增用户','BUTTON',2,NULL,NULL,NULL,1,0,1,0,NULL,NULL,'2025-12-22 16:44:57','2025-12-22 16:44:57'),(101,'user:edit','编辑用户','BUTTON',2,NULL,NULL,NULL,2,0,1,0,NULL,NULL,'2025-12-22 16:44:57','2025-12-22 16:44:57'),(102,'user:delete','删除用户','BUTTON',2,NULL,NULL,NULL,3,0,1,0,NULL,NULL,'2025-12-22 16:44:57','2025-12-22 16:44:57'),(103,'video:add','新增视频','BUTTON',31,NULL,NULL,NULL,1,0,1,0,NULL,NULL,'2025-12-22 16:44:57','2025-12-22 16:44:57'),(104,'video:edit','编辑视频','BUTTON',31,NULL,NULL,NULL,2,0,1,0,NULL,NULL,'2025-12-22 16:44:57','2025-12-22 16:44:57'),(105,'video:delete','删除视频','BUTTON',31,NULL,NULL,NULL,3,0,1,0,NULL,NULL,'2025-12-22 16:44:57','2025-12-22 16:44:57');
-/*!40000 ALTER TABLE `sys_permission` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `sys_role`
---
-
-DROP TABLE IF EXISTS `sys_role`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `sys_role` (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-  `code` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '角色编码(唯一)',
-  `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '角色名称',
-  `description` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '角色描述',
-  `sort` int DEFAULT '0' COMMENT '排序',
-  `status` tinyint DEFAULT '1' COMMENT '状态: 1启用 0禁用',
-  `deleted` tinyint DEFAULT '0' COMMENT '软删除',
-  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_code` (`code`),
-  KEY `idx_status` (`status`),
-  KEY `idx_deleted` (`deleted`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='角色表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `sys_role`
---
-
-LOCK TABLES `sys_role` WRITE;
-/*!40000 ALTER TABLE `sys_role` DISABLE KEYS */;
-INSERT INTO `sys_role` VALUES (1,'SUPER_ADMIN','超级管理员','拥有所有权限',0,1,0,'2025-12-24 11:18:51','2025-12-24 11:18:51'),(2,'user','普通用户','普通用户无后台权限',2,1,0,'2025-12-24 11:18:51','2025-12-24 11:18:51'),(3,'admin','管理员','管理员无系统管理权限',1,1,0,'2025-12-24 11:18:51','2025-12-24 11:18:51');
-/*!40000 ALTER TABLE `sys_role` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `sys_role_permission`
---
-
-DROP TABLE IF EXISTS `sys_role_permission`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `sys_role_permission` (
-  `role_id` bigint NOT NULL COMMENT '角色ID',
-  `permission_id` bigint NOT NULL COMMENT '权限ID',
-  PRIMARY KEY (`role_id`,`permission_id`),
-  KEY `idx_permission` (`permission_id`),
-  CONSTRAINT `fk_rp_permission` FOREIGN KEY (`permission_id`) REFERENCES `sys_permission` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_rp_role` FOREIGN KEY (`role_id`) REFERENCES `sys_role` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='角色权限关联表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `sys_role_permission`
---
-
-LOCK TABLES `sys_role_permission` WRITE;
-/*!40000 ALTER TABLE `sys_role_permission` DISABLE KEYS */;
-INSERT INTO `sys_role_permission` VALUES (1,1),(3,1),(1,2),(3,2),(1,3),(3,3),(1,4),(1,31),(3,31),(1,32),(3,32),(1,33),(3,33),(1,34),(3,34),(1,35),(3,35),(1,41),(1,42),(1,43),(1,100),(3,100),(1,101),(3,101),(1,102),(3,102),(1,103),(3,103),(1,104),(3,104),(1,105),(3,105);
-/*!40000 ALTER TABLE `sys_role_permission` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `sys_user`
---
-
-DROP TABLE IF EXISTS `sys_user`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `sys_user` (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-  `username` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '用户名',
-  `password` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '密码(BCrypt加密)',
-  `email` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '邮箱',
-  `phone` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '手机号',
-  `status` tinyint DEFAULT '1' COMMENT '状态: 1正常 0禁用',
-  `deleted` tinyint DEFAULT '0' COMMENT '软删除: 0未删 1已删',
-  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_username` (`username`),
-  KEY `idx_email` (`email`),
-  KEY `idx_status` (`status`),
-  KEY `idx_deleted` (`deleted`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `sys_user`
---
-
-LOCK TABLES `sys_user` WRITE;
-/*!40000 ALTER TABLE `sys_user` DISABLE KEYS */;
-INSERT INTO `sys_user` VALUES (1,'admin','$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi',NULL,NULL,1,0,'2025-12-22 16:44:57','2025-12-23 17:01:14'),(2,'test','$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi','gsdfgdfs2@gmail.com','130283022',1,0,'2025-12-22 16:44:57','2025-12-22 16:44:57'),(3,'普通管理员','$2a$10$M2K05E6WSUloLFAgpw/O7OW3D3v0QMfBSlS/h1t1Kk/IXDNfWH0De',NULL,NULL,1,0,'2025-12-24 14:41:42','2025-12-24 14:41:42'),(4,'test1','$2a$10$IJR6a4K/xdqjhJ7R1g5JM.zCyR9Nfmgm7xnDUGu.tQxWh2qDUdRnq',NULL,NULL,1,0,'2025-12-24 17:39:13','2025-12-24 17:39:13');
-/*!40000 ALTER TABLE `sys_user` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `sys_user_info`
---
-
-DROP TABLE IF EXISTS `sys_user_info`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `sys_user_info` (
-  `user_id` bigint NOT NULL COMMENT '用户ID',
-  `nickname` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '昵称',
-  `avatar` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '头像URL',
-  `gender` tinyint DEFAULT '2' COMMENT '性别: 0女 1男 2保密',
-  `intro` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '个人简介',
-  `birthday` date DEFAULT NULL COMMENT '生日',
-  `location` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '所在地',
-  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  PRIMARY KEY (`user_id`),
-  CONSTRAINT `fk_userinfo_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户档案表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `sys_user_info`
---
-
-LOCK TABLES `sys_user_info` WRITE;
-/*!40000 ALTER TABLE `sys_user_info` DISABLE KEYS */;
-INSERT INTO `sys_user_info` VALUES (1,'系统管理员','http://localhost/media/images/2025/12/23/261533693284323328.png',1,'',NULL,NULL,'2025-12-22 16:44:57','2025-12-22 16:44:57'),(2,'测试用户','https://api.dicebear.com/7.x/avataaars/svg?seed=test',1,'这个人很懒，什么都没写~',NULL,NULL,'2025-12-22 16:44:57','2025-12-22 16:44:57'),(3,'普通管理员1','https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1144400/ss_c1aa26767e660ca6180d770083ecdc07d38e50d7.1920x1080.jpg?t=1752128014',2,NULL,NULL,NULL,'2025-12-24 14:41:42','2025-12-24 14:41:42'),(4,'深刻理解发撒两节课',NULL,1,'天若有情天易老',NULL,NULL,'2025-12-24 17:39:13','2025-12-24 17:39:13');
-/*!40000 ALTER TABLE `sys_user_info` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `sys_user_role`
---
-
-DROP TABLE IF EXISTS `sys_user_role`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `sys_user_role` (
-  `user_id` bigint NOT NULL COMMENT '用户ID',
-  `role_id` bigint NOT NULL COMMENT '角色ID',
-  PRIMARY KEY (`user_id`,`role_id`),
-  KEY `idx_role` (`role_id`),
-  CONSTRAINT `fk_ur_role` FOREIGN KEY (`role_id`) REFERENCES `sys_role` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_ur_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户角色关联表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `sys_user_role`
---
-
-LOCK TABLES `sys_user_role` WRITE;
-/*!40000 ALTER TABLE `sys_user_role` DISABLE KEYS */;
-INSERT INTO `sys_user_role` VALUES (1,1),(2,2),(4,2),(3,3),(4,3);
-/*!40000 ALTER TABLE `sys_user_role` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `tag`
---
-
-DROP TABLE IF EXISTS `tag`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `tag` (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
-  `name` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '标签名',
-  `color` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT '#409EFF' COMMENT '颜色(HEX)',
-  `use_count` int DEFAULT '0' COMMENT '使用次数',
-  `deleted` tinyint DEFAULT '0' COMMENT '软删除',
-  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_name` (`name`),
-  KEY `idx_use_count` (`use_count` DESC),
-  KEY `idx_deleted` (`deleted`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='标签表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `tag`
---
-
-LOCK TABLES `tag` WRITE;
-/*!40000 ALTER TABLE `tag` DISABLE KEYS */;
-INSERT INTO `tag` VALUES (1,'热门','#F56C6C',100,0,'2025-12-22 16:44:57'),(2,'推荐','#E6A23C',80,0,'2025-12-22 16:44:57'),(3,'新上线','#67C23A',60,0,'2025-12-22 16:44:57'),(4,'经典','#409EFF',50,0,'2025-12-22 16:44:57'),(5,'高分','#FB7299',40,0,'2025-12-22 16:44:57'),(6,'国产','#909399',30,0,'2025-12-22 16:44:57'),(7,'欧美','#2196F3',25,0,'2025-12-22 16:44:57'),(8,'日韩','#9C27B0',20,0,'2025-12-22 16:44:57'),(9,'TestTag111','#409EFF',0,0,'2025-12-25 01:20:22'),(10,'PermissionTest123','#18a058',0,1,'2025-12-25 01:23:27');
-/*!40000 ALTER TABLE `tag` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `user_favorite`
---
-
-DROP TABLE IF EXISTS `user_favorite`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `user_favorite` (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
-  `user_id` bigint NOT NULL COMMENT '用户ID',
-  `video_id` bigint NOT NULL COMMENT '视频ID',
-  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '收藏时间',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_user_video` (`user_id`,`video_id`),
-  KEY `idx_video` (`video_id`),
-  CONSTRAINT `fk_fav_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_fav_video` FOREIGN KEY (`video_id`) REFERENCES `video` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='收藏表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `user_favorite`
---
-
-LOCK TABLES `user_favorite` WRITE;
-/*!40000 ALTER TABLE `user_favorite` DISABLE KEYS */;
-INSERT INTO `user_favorite` VALUES (6,3,1,'2025-12-24 16:43:23');
-/*!40000 ALTER TABLE `user_favorite` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `user_like`
---
-
-DROP TABLE IF EXISTS `user_like`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `user_like` (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
-  `user_id` bigint NOT NULL COMMENT '用户ID',
-  `target_type` tinyint NOT NULL COMMENT '类型: 1视频 2评论',
-  `target_id` bigint NOT NULL COMMENT '目标ID',
-  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '点赞时间',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_user_target` (`user_id`,`target_type`,`target_id`),
-  KEY `idx_target` (`target_type`,`target_id`),
-  CONSTRAINT `fk_like_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='点赞表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `user_like`
---
-
-LOCK TABLES `user_like` WRITE;
-/*!40000 ALTER TABLE `user_like` DISABLE KEYS */;
-INSERT INTO `user_like` VALUES (5,1,1,1,'2025-12-24 11:48:57'),(6,3,1,1,'2025-12-24 16:43:23');
-/*!40000 ALTER TABLE `user_like` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `video`
---
-
-DROP TABLE IF EXISTS `video`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `video` (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
-  `title` varchar(200) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '标题',
-  `intro` text COLLATE utf8mb4_unicode_ci COMMENT '简介',
-  `cover_url` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '封面URL',
-  `video_url` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '视频URL(单集)',
-  `category_id` bigint DEFAULT NULL COMMENT '分类ID',
-  `user_id` bigint NOT NULL COMMENT '上传者ID',
-  `status` tinyint DEFAULT '0' COMMENT '状态: 0草稿 1审核 2发布 3下架',
-  `view_count` int unsigned DEFAULT '0' COMMENT '播放量',
-  `like_count` int unsigned DEFAULT '0' COMMENT '点赞数',
-  `favorite_count` int unsigned DEFAULT '0' COMMENT '收藏数',
-  `comment_count` int unsigned DEFAULT '0' COMMENT '评论数',
-  `duration` int DEFAULT '0' COMMENT '时长(秒)',
-  `is_vip` tinyint DEFAULT '0' COMMENT 'VIP: 0否 1是',
-  `publish_time` datetime DEFAULT NULL COMMENT '发布时间',
-  `deleted` tinyint DEFAULT '0' COMMENT '软删除',
-  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  PRIMARY KEY (`id`),
-  KEY `idx_category` (`category_id`),
-  KEY `idx_user` (`user_id`),
-  KEY `idx_status` (`status`),
-  KEY `idx_view` (`view_count` DESC),
-  KEY `idx_create` (`create_time` DESC),
-  KEY `idx_deleted` (`deleted`),
-  FULLTEXT KEY `ft_title` (`title`),
-  CONSTRAINT `fk_video_category` FOREIGN KEY (`category_id`) REFERENCES `category` (`id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_video_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='视频表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `video`
---
-
-LOCK TABLES `video` WRITE;
-/*!40000 ALTER TABLE `video` DISABLE KEYS */;
-INSERT INTO `video` VALUES (1,'test','test','http://localhost/media/images/2025/12/22/261418343100190720.png','http://localhost/media/videos/2025/12/22/261418486432141312.mp4',8,1,2,91,0,0,0,100,0,NULL,0,'2025-12-22 17:03:59','2025-12-25 02:12:25');
-/*!40000 ALTER TABLE `video` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `video_episode`
---
-
-DROP TABLE IF EXISTS `video_episode`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `video_episode` (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
-  `video_id` bigint NOT NULL COMMENT '视频ID',
-  `title` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '分集标题',
-  `file_url` varchar(500) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '文件URL',
-  `cover_url` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '封面URL',
-  `duration` int DEFAULT '0' COMMENT '时长(秒)',
-  `sort` int DEFAULT '0' COMMENT '排序',
-  `is_free` tinyint DEFAULT '1' COMMENT '免费: 1是 0否',
-  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  PRIMARY KEY (`id`),
-  KEY `idx_video` (`video_id`),
-  KEY `idx_sort` (`sort`),
-  CONSTRAINT `fk_episode_video` FOREIGN KEY (`video_id`) REFERENCES `video` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='视频分集表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `video_episode`
---
-
-LOCK TABLES `video_episode` WRITE;
-/*!40000 ALTER TABLE `video_episode` DISABLE KEYS */;
-/*!40000 ALTER TABLE `video_episode` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `video_tag_rel`
---
-
-DROP TABLE IF EXISTS `video_tag_rel`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `video_tag_rel` (
-  `video_id` bigint NOT NULL COMMENT '视频ID',
-  `tag_id` bigint NOT NULL COMMENT '标签ID',
-  PRIMARY KEY (`video_id`,`tag_id`),
-  KEY `idx_tag` (`tag_id`),
-  CONSTRAINT `fk_rel_tag` FOREIGN KEY (`tag_id`) REFERENCES `tag` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_rel_video` FOREIGN KEY (`video_id`) REFERENCES `video` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='视频标签关联';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `video_tag_rel`
---
-
-LOCK TABLES `video_tag_rel` WRITE;
-/*!40000 ALTER TABLE `video_tag_rel` DISABLE KEYS */;
-INSERT INTO `video_tag_rel` VALUES (1,1),(1,2),(1,3),(1,4),(1,6),(1,9);
-/*!40000 ALTER TABLE `video_tag_rel` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `watch_history`
---
-
-DROP TABLE IF EXISTS `watch_history`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `watch_history` (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键',
-  `user_id` bigint NOT NULL COMMENT '用户ID',
-  `video_id` bigint NOT NULL COMMENT '视频ID',
-  `episode_id` bigint DEFAULT NULL COMMENT '分集ID',
-  `watch_duration` int DEFAULT '0' COMMENT '观看时长(秒)',
-  `watch_progress` int DEFAULT '0' COMMENT '观看进度(秒)',
-  `last_watch_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后观看时间',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_user_video` (`user_id`,`video_id`),
-  KEY `idx_user` (`user_id`),
-  KEY `idx_time` (`last_watch_time` DESC),
-  KEY `fk_history_video` (`video_id`),
-  CONSTRAINT `fk_history_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_history_video` FOREIGN KEY (`video_id`) REFERENCES `video` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='观看历史表';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `watch_history`
---
-
-LOCK TABLES `watch_history` WRITE;
-/*!40000 ALTER TABLE `watch_history` DISABLE KEYS */;
-INSERT INTO `watch_history` VALUES (1,1,1,NULL,113,113,'2025-12-24 17:36:06'),(2,3,1,NULL,180,180,'2025-12-24 16:43:52'),(4,4,1,NULL,180,180,'2025-12-24 23:56:00');
-/*!40000 ALTER TABLE `watch_history` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Dumping events for database 'vms_cloud'
---
-
---
--- Dumping routines for database 'vms_cloud'
---
+-- ========================================
+-- 完成
+-- ========================================
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
-
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
 /*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
@@ -646,5 +552,3 @@ UNLOCK TABLES;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
-
--- Dump completed on 2025-12-25  2:21:27
