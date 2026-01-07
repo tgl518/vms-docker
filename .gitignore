@@ -32,7 +32,7 @@ backend/VMS-springcloud/**/target/
 软件测试/
 
 # 后端测试目录
-backend/VMS-springcloud/**/src/test/
+# backend/VMS-springcloud/**/src/test/
 
 # 压缩包
 *.zip
