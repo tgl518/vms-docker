@@ -68,7 +68,7 @@ class WatchHistoryServiceTest {
             assertThat(inserted.getLastWatchTime()).isNotNull();
 
             // 不应调用更新
-            verify(watchHistoryMapper, never()).updateById(any());
+            verify(watchHistoryMapper, never()).updateById(any(WatchHistory.class));
         }
 
         @Test
@@ -89,7 +89,7 @@ class WatchHistoryServiceTest {
 
             // 模拟找到已有记录
             when(watchHistoryMapper.selectOne(any(LambdaQueryWrapper.class))).thenReturn(existing);
-            when(watchHistoryMapper.updateById(any())).thenReturn(1);
+            when(watchHistoryMapper.updateById(any(WatchHistory.class))).thenReturn(1);
 
             // Act
             watchHistoryService.saveProgress(userId, videoId, null, watchDuration, 600);
@@ -97,7 +97,7 @@ class WatchHistoryServiceTest {
             // Assert
             // 验证更新而非插入
             verify(watchHistoryMapper).updateById(any(WatchHistory.class));
-            verify(watchHistoryMapper, never()).insert(any());
+            verify(watchHistoryMapper, never()).insert(any(WatchHistory.class));
 
             // 验证更新后的值
             assertThat(existing.getWatchDuration()).isEqualTo(watchDuration);

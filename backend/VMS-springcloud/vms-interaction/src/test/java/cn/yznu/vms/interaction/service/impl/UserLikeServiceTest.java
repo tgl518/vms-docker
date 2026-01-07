@@ -158,7 +158,7 @@ class UserLikeServiceTest {
 
             // Assert
             verify(userLikeMapper).deleteById(100L);
-            verify(userLikeMapper, never()).insert(any());
+            verify(userLikeMapper, never()).insert(any(UserLike.class));
 
             // 验证同步减少视频点赞计数
             verify(videoClient).decrementLikeCount(targetId);
