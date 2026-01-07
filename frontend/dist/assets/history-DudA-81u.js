@@ -1,0 +1,1 @@
+import{az as s}from"./index-CktGYKsc.js";const r={saveProgress:e=>s.post("/history/progress",e),getList:e=>s.get("/history/list",{params:e}),delete:e=>s.delete(`/history/${e}`),clear:()=>s.delete("/history/clear")};export{r as h};

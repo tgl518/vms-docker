@@ -1,1 +1,0 @@
-import{az as n}from"./index-B-Gu03yZ.js";const r={getAllBanners:()=>n.get("/banner/all"),getActiveBanners:()=>n.get("/banner/list"),addBanner:e=>n.post("/banner",e),updateBanner:(e,a)=>n.put(`/banner/${e}`,a),deleteBanner:e=>n.delete(`/banner/${e}`)};export{r as a};
