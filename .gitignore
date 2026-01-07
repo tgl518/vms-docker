@@ -28,3 +28,11 @@ frontend/vedio-system/node_modules/
 # Maven 构建产物
 backend/VMS-springcloud/**/target/
 
+# 软件测试文件夹
+软件测试/
+
+# 后端测试目录
+backend/VMS-springcloud/**/src/test/
+
+# 压缩包
+*.zip
