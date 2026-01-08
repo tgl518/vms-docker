@@ -19,6 +19,8 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -84,6 +86,7 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
+    @Cacheable(value = "roleDetail", key = "#id", unless = "#result == null")
     public RoleVO getRoleById(Long id) {
         Role role = roleMapper.selectById(id);
         if (role == null) {
@@ -131,6 +134,7 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(value = "roleDetail", key = "#id")
     public void updateRole(Long id, RoleUpdateDTO dto) {
         Role role = roleMapper.selectById(id);
         if (role == null) {
@@ -185,6 +189,7 @@ public class RoleServiceImpl implements RoleService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(value = "roleDetail", key = "#id")
     public void deleteRole(Long id) {
         Role role = roleMapper.selectById(id);
         if (role == null) {

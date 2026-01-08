@@ -49,6 +49,7 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
+    @Cacheable(value = "permissionTree", unless = "#result.isEmpty()")
     public List<PermissionVO> getAllPermissionTree() {
         // 查询所有权限（包括未启用的）
         LambdaQueryWrapper<Permission> wrapper = new LambdaQueryWrapper<>();
@@ -63,6 +64,7 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
+    @Cacheable(value = "menuTree", unless = "#result.isEmpty()")
     public List<PermissionVO> getMenuTree() {
         // 只查询MENU类型且启用的权限
         LambdaQueryWrapper<Permission> wrapper = new LambdaQueryWrapper<>();
@@ -93,7 +95,7 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    @CacheEvict(value = "userPermissions", allEntries = true)
+    @CacheEvict(value = {"userPermissions", "permissionTree", "menuTree"}, allEntries = true)
     public Long createPermission(PermissionCreateDTO dto) {
         // 检查编码是否重复
         LambdaQueryWrapper<Permission> wrapper = new LambdaQueryWrapper<>();
@@ -123,7 +125,7 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    @CacheEvict(value = "userPermissions", allEntries = true)
+    @CacheEvict(value = {"userPermissions", "permissionTree", "menuTree"}, allEntries = true)
     public void updatePermission(Long id, PermissionUpdateDTO dto) {
         Permission permission = permissionMapper.selectById(id);
         if (permission == null) {
@@ -172,7 +174,7 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    @CacheEvict(value = "userPermissions", allEntries = true)
+    @CacheEvict(value = {"userPermissions", "permissionTree", "menuTree"}, allEntries = true)
     public void deletePermission(Long id) {
         Permission permission = permissionMapper.selectById(id);
         if (permission == null) {
@@ -190,7 +192,7 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
-    @CacheEvict(value = "userPermissions", allEntries = true)
+    @CacheEvict(value = {"userPermissions", "permissionTree", "menuTree"}, allEntries = true)
     public void clearCache() {
         // 仅清除缓存，无其他操作
     }
