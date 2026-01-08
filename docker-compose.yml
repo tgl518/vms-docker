@@ -168,8 +168,8 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1536M
-          cpus: '2.0'
+          memory: 2G
+          cpus: '4.0'
         reservations:
           memory: 768M
     networks:
