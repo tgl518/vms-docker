@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CachingConfigurer;
 import org.springframework.context.annotation.Bean;
@@ -103,6 +104,13 @@ public class RedisConfig implements CachingConfigurer {
         mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
         mapper.registerModule(new JavaTimeModule());  // 支持Java 8日期类型
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+        // 开启类型白名单，解决反序列化时的 ClassCastException (LinkedHashMap cannot be cast to UserVO)
+        mapper.activateDefaultTyping(
+                mapper.getPolymorphicTypeValidator(),
+                ObjectMapper.DefaultTyping.NON_FINAL,
+                JsonTypeInfo.As.PROPERTY
+        );
         return new GenericJackson2JsonRedisSerializer(mapper);
     }
 }
