@@ -19,6 +19,9 @@ import cn.yznu.vms.user.vo.UserVO;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.beans.BeanUtils;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -138,6 +141,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Cacheable(value = "user", key = "#userId", unless = "#result == null")
     public UserVO getUserInfo(Long userId) {
         User user = userMapper.selectById(userId);
         if (user == null) {
@@ -173,6 +177,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @CacheEvict(value = "user", key = "#userId")
     @Transactional(rollbackFor = Exception.class)
     public void updateUserInfo(Long userId, UserInfoUpdateDTO dto) {
         // 确保用户存在
@@ -361,6 +366,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "user", key = "#dto.id"),
+            @CacheEvict(value = "user:permissions", key = "#dto.id")
+    })
     @Transactional(rollbackFor = Exception.class)
     public void updateUser(cn.yznu.vms.user.dto.UserUpdateDTO dto, Long operatorId) {
         User user = userMapper.selectById(dto.getId());
@@ -433,6 +442,10 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "user", key = "#userId"),
+            @CacheEvict(value = "user:permissions", key = "#userId")
+    })
     @Transactional(rollbackFor = Exception.class)
     public void deleteUser(Long userId, Long operatorId) {
         User user = userMapper.selectById(userId);
